@@ -10,7 +10,7 @@ function NetworkView(network, canvas) {
     }, this);
     network.onaddneuron.add(function (event) {
         this.neurons.set(event.data.neuron, new NeuronView(event.data.neuron, this));
-        this.draw();
+        this.drawDelayed(3000);
     }.bind(this));
     this.draw();
 }
@@ -41,4 +41,14 @@ NetworkView.prototype.draw = function () {
             context.fillRect(n.xt - 2, n.yt - 2, 4, 4);
         });
     }.bind(this));
+};
+
+NetworkView.prototype.drawDelayed = function (t) {
+    'use strict';
+    if (this.drawingDelayed) { return; }
+    this.drawingDelayed = true;
+    setTimeout(function () {
+        this.drawingDelayed = false;
+        this.draw();
+    }.bind(this), t);
 };
