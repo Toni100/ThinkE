@@ -1,0 +1,50 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>Imgu</title>
+        <link rel="stylesheet" href="style/style.css" />
+    </head>
+    <body>
+        <canvas id='graph' class='graph'></canvas>
+
+        <div id='videoInputContainer' class='input'>
+            <button id='videoInputButton'>video</button>
+            <br>
+            <video id='videoInput' autoplay></video>
+        </div>
+        <input id='fileInput' class='input' type='file' multiple autocomplete='off' />
+        <input id='textInput' class='input' placeholder='text' autocomplete='off' />
+
+        <p id='vertexCount' class='output'>0</p>
+        <canvas id='context' class='output'></canvas>
+
+        <canvas id='network' class='action'></canvas>
+        <textarea id='textAction' class='action' autocomplete='off'></textarea>
+        <canvas id='imageAction' class='action'></canvas>
+
+        <script src='scripts/utilities/eventhandlerlist.js'></script>
+        <script src='scripts/utilities/image.js'></script>
+        <script src='scripts/utilities/queue.js'></script>
+        <script src='scripts/utilities/random.js'></script>
+        <script src='scripts/utilities/zoomify.js'></script>
+        <script src='scripts/graph/displaycache.js'></script>
+        <script src='scripts/graph/vertex.js'></script>
+        <script src='scripts/graph/vertexview.js'></script>
+        <script src='scripts/graph/edge.js'></script>
+        <script src='scripts/graph/edgeview.js'></script>
+        <script src='scripts/graph/trigger.js'></script>
+        <script src='scripts/graph/triggerview.js'></script>
+        <script src='scripts/graph/graph.js'></script>
+        <script src='scripts/graph/graphview.js'></script>
+        <script src='scripts/network/synapse.js'></script>
+        <script src='scripts/network/synapseview.js'></script>
+        <script src='scripts/network/neuron.js'></script>
+        <script src='scripts/network/neuronview.js'></script>
+        <script src='scripts/network/network.js'></script>
+        <script src='scripts/network/networkview.js'></script>
+        <script src='scripts/input.js'></script>
+        <script src='scripts/action.js'></script>
+        <script src='scripts/main.js'></script>
+    </body>
+</html>

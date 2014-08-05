@@ -1,0 +1,18 @@
+#graph { position: absolute; left: 0px; top: 0px; background-color: rgb(239, 252, 255); }
+#videoInputContainer { left: 10px; top: 10px; width: 140px; text-align: center; }
+#videoInputButton { border-style: none; }
+#videoInput { width: 130px; }
+#fileInput { left: 162px; top: 10px; width: 200px; }
+#textInput { top: 10px; left: 374px; background-color: white; }
+#vertexCount { right: 10px; top: 10px; min-width: 40px; text-align: center; }
+#context { right: 10px; bottom: 10px; }
+#network { left: 322px; bottom: 10px; }
+#textAction { left: 10px; bottom: 10px; resize: none; width: 300px; height: 150px; }
+#imageAction { left: 10px; bottom: 172px; width: 100px; height: 100px; }
+
+.input { background-color: #B2E0F0; border: 1px solid rgb(200, 200, 255); margin: 0px; }
+.output { background-color: #C2D6FF; border: 1px solid rgb(255, 200, 200); margin: 0px; }
+.action { background-color: #FFFFF5; border: 1px solid rgb(30, 190, 50); margin: 0px; }
+
+.input, .output, .action { position: absolute; opacity: 0.8; }
+.input:hover, .output:hover, .action:hover { opacity: 1; }
