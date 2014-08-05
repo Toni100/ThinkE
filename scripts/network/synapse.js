@@ -1,10 +1,11 @@
 function Synapse(postNeuron) {
     'use strict';
     this.postNeuron = postNeuron;
-    this.weight = 2 * Math.random() - 1;
+    this.weight = 0.2 + 0.8 * Math.random();
+    this.direction = Math.random() > 0.2 ? 1 : -1;
 }
 
-Synapse.prototype.stimulate = function (w) {
+Synapse.prototype.stimulate = function (strength) {
     'use strict';
-    this.postNeuron.stimulate(w * this.weight);
+    this.postNeuron.stimulate(strength * this.weight * this.direction);
 };
