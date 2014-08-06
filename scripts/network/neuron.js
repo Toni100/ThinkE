@@ -1,10 +1,12 @@
 /*jslint browser: true */
-/*global EventHandlerList */
+/*global EventHandlerList, Synapse, randomChoice, randomSample */
 
 function Neuron() {
     'use strict';
     this.postSynapses = new Set();
-    this.potential = 0;
+    this.potential = 0.6;
+    this.x = Math.random();
+    this.y = Math.random();
     this.flags = {};
     this.onfire = new EventHandlerList();
     this.onaddpostsynapse = new EventHandlerList();
@@ -22,23 +24,32 @@ Neuron.prototype.addPostNeuron = function (neuron) {
     this.onaddpostsynapse.fire({synapse: s});
 };
 
-Neuron.prototype.integrate = function (network, npost, npre) {
+Neuron.prototype.connect = function (network) {
     'use strict';
-    var pre = randomSample(network.neurons, npost + npre),
-        post = pre.splice(0, npost);
-    post.forEach(function (p) {
-        this.postSynapses.add(new Synapse(p));
+    if (!network.neurons.size) { return; }
+    var candidates = new Set(network.neurons),
+        n;
+    candidates.delete(this);
+    this.postSynapses.forEach(function (s) {
+        candidates.delete(s.postNeuron);
+    });
+    n = randomChoice(candidates);
+    randomSample(candidates, 15).forEach(function (c) {
+        if (c.distance(this) < n.distance(this)) {
+            n = c;
+        }
     }, this);
-    network.neurons.add(this);
-    network.onaddneuron.fire({neuron: this});
-    pre.forEach(function (p) {
-        p.addPostNeuron(p);
-    }, this);
+    this.addPostNeuron(n);
+};
+
+Neuron.prototype.distance = function (other) {
+    'use strict';
+    return Math.sqrt(Math.pow(this.x - other.x, 2) + Math.pow(this.y - other.y, 2));
 };
 
 Neuron.prototype.stimulate = function (s) {
     'use strict';
-    this.potential = Math.min(2, Math.max(-2, this.potential + s));
+    this.potential = Math.min(2, Math.max(0, this.potential + s));
     if (this.charging || this.potential < 1) { return; }
     this.charging = true;
     var strength = this.potential / 2;

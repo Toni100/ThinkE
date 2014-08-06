@@ -1,3 +1,4 @@
+/*jslint browser: true */
 /*global EventHandlerList, Neuron, randomSample */
 
 function Network() {
@@ -5,27 +6,48 @@ function Network() {
     this.neurons = new Set();
     this.input = new Map();
     this.onaddneuron = new EventHandlerList();
+    this.onconnectneurons = new EventHandlerList();
 }
 
 Network.prototype.addAction = function (f) {
     'use strict';
-    var n = new Neuron();
-    n.onfire.add(f);
-    n.flags.action = true;
-    n.integrate(this, 15, 15);
+    this.addNeuron(null, f);
 };
 
 Network.prototype.addInput = function (id) {
     'use strict';
-    var n = new Neuron();
-    this.input.set(id, n);
-    n.flags.input = true;
-    n.integrate(this, 15, 0);
+    this.addNeuron(id, null);
 };
 
-Network.prototype.addNeuron = function () {
+Network.prototype.addNeuron = function (inputID, action) {
     'use strict';
-    new Neuron().integrate(this, 15, 15);
+    var n = new Neuron();
+    if (inputID) {
+        this.input.set(inputID, n);
+        n.flags.input = true;
+    }
+    if (action) {
+        n.onfire.add(action);
+        n.flags.action = true;
+    }
+    this.neurons.add(n);
+    this.onaddneuron.fire({neuron: n});
+    this.connectNeurons();
+};
+
+Network.prototype.connectNeurons = function () {
+    'use strict';
+    if (this.connectingNeurons || this.neurons.size < 100) { return; }
+    this.connectingNeurons = true;
+    setTimeout(function () {
+        this.connectingNeurons = false;
+        this.neurons.forEach(function (n) {
+            while (n.postSynapses.size < 4) {
+                n.connect(this);
+            }
+        }, this);
+        this.onconnectneurons.fire();
+    }.bind(this), 500);
 };
 
 Network.prototype.stimulate = function (id) {

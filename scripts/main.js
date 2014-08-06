@@ -4,9 +4,10 @@
 var graph = new Graph(),
     network = new Network(),
     graphView = new GraphView(graph, document.getElementById('graph')),
-    networkView = new NetworkView(network, document.getElementById('network'));
+    networkView = new NetworkView(network, document.getElementById('network')),
+    i;
 
-for (var i = 0; i <= 31; i += 1) {
+for (i = 0; i <= 200; i += 1) {
     network.addNeuron();
 }
 
@@ -39,6 +40,7 @@ resizeGraph();
 // input
 makeVideoInput(graph.add.bind(graph));
 document.getElementById('fileInput').onchange = function () {
+    'use strict';
     var i;
     for (i = 0; i < this.files.length; i += 1) {
         if (this.files[i].type.match(/image\/*/)) {
@@ -47,6 +49,7 @@ document.getElementById('fileInput').onchange = function () {
     }
 };
 document.getElementById('textInput').onkeypress = function (event) {
+    'use strict';
     if (event.keyCode === 13 && this.value) {
         graph.add(this.value);
         this.value = '';
@@ -83,6 +86,6 @@ graph.ondeletevertex.add(setVertexCount);
 }());
 
 
-// for (var i = 1; i <= 100; i += 1) {
+// for (i = 1; i <= 100; i += 1) {
 //     graph.add(Math.round(Math.random() * 1000000));
 // }

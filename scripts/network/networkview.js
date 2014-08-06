@@ -10,8 +10,9 @@ function NetworkView(network, canvas) {
     }, this);
     network.onaddneuron.add(function (event) {
         this.neurons.set(event.data.neuron, new NeuronView(event.data.neuron, this));
-        this.drawDelayed(3000);
+        this.drawDelayed();
     }.bind(this));
+    network.onconnectneurons.add(this.drawDelayed.bind(this));
     this.draw();
 }
 
@@ -43,12 +44,12 @@ NetworkView.prototype.draw = function () {
     }.bind(this));
 };
 
-NetworkView.prototype.drawDelayed = function (t) {
+NetworkView.prototype.drawDelayed = function () {
     'use strict';
     if (this.drawingDelayed) { return; }
     this.drawingDelayed = true;
     setTimeout(function () {
         this.drawingDelayed = false;
         this.draw();
-    }.bind(this), t);
+    }.bind(this), 1000);
 };
