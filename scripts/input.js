@@ -23,20 +23,19 @@ function makeVideoInput(add) {
         setTimeout(recordFrame, 500);
     }
     function startRecording() {
-        recording = true;
-        input.innerHTML = 'pause recording';
-        input.onclick = pauseRecording;
-        recordFrame();
+        navigator.mozGetUserMedia({video: true}, function (stream) {
+            recording = true;
+            video.mozSrcObject = stream;
+            input.innerHTML = 'stop';
+            input.onclick = stopRecording;
+            recordFrame();
+        }, function () { return; });
     }
-    function pauseRecording() {
+    function stopRecording() {
         recording = false;
-        input.innerHTML = 'continue recording';
+        video.mozSrcObject = null;
+        input.innerHTML = 'video';
         input.onclick = startRecording;
     }
-    input.onclick = function () {
-        navigator.mozGetUserMedia({video: true}, function (stream) {
-            video.mozSrcObject = stream;
-            startRecording();
-        }, function () { return; });
-    };
+    input.onclick = startRecording;
 }
