@@ -6,6 +6,7 @@ function Network() {
     this.neurons = new Set();
     this.input = new Map();
     this.onaddneuron = new EventHandlerList();
+    this.onreward = new EventHandlerList();
 }
 
 Network.prototype.addAction = function (f) {
@@ -54,6 +55,7 @@ Network.prototype.connectNeurons = function () {
 Network.prototype.reward = function (value) {
     'use strict';
     this.neurons.forEach(function (n) { n.reward(value); });
+    this.onreward.fire({value: value});
 };
 
 Network.prototype.stimulate = function (id) {

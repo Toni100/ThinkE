@@ -12,6 +12,7 @@ function NetworkView(network, canvas) {
         this.neurons.set(event.data.neuron, new NeuronView(event.data.neuron, this));
         this.drawDelayed();
     }.bind(this));
+    network.onreward.add(this.drawDelayed.bind(this));
     this.draw();
 }
 
