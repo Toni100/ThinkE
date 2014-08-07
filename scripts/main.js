@@ -7,7 +7,7 @@ var graph = new Graph(),
     networkView = new NetworkView(network, document.getElementById('network')),
     i;
 
-for (i = 0; i <= 200; i += 1) {
+for (i = 0; i < 200; i += 1) {
     network.addNeuron();
 }
 
@@ -72,6 +72,7 @@ graph.ondeletevertex.add(setVertexCount);
         running = false;
     function showContext() {
         running = false;
+        if (!graph.vertices.has(last)) { return; }
         graphView.filter(
             graph.nearest(last, 1),
             canvas
