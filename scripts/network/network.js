@@ -6,7 +6,6 @@ function Network() {
     this.neurons = new Set();
     this.input = new Map();
     this.onaddneuron = new EventHandlerList();
-    this.onconnectneurons = new EventHandlerList();
 }
 
 Network.prototype.addAction = function (f) {
@@ -31,6 +30,9 @@ Network.prototype.addNeuron = function (inputID, action) {
         n.flags.action = true;
     }
     this.neurons.add(n);
+    n.ondeletepostsynapse.add(function () {
+        this.connectNeurons();
+    }.bind(this));
     this.onaddneuron.fire({neuron: n});
     this.connectNeurons();
 };
@@ -46,8 +48,12 @@ Network.prototype.connectNeurons = function () {
                 n.connect(this);
             }
         }, this);
-        this.onconnectneurons.fire();
     }.bind(this), 500);
+};
+
+Network.prototype.reward = function (value) {
+    'use strict';
+    this.neurons.forEach(function (n) { n.reward(value); });
 };
 
 Network.prototype.stimulate = function (id) {

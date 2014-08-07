@@ -10,6 +10,7 @@ function Neuron() {
     this.flags = {};
     this.onfire = new EventHandlerList();
     this.onaddpostsynapse = new EventHandlerList();
+    this.ondeletepostsynapse = new EventHandlerList();
     this.onfire.add(function (event) {
         this.postSynapses.forEach(function (s) {
             s.stimulate(event.data.strength);
@@ -21,6 +22,10 @@ Neuron.prototype.addPostNeuron = function (neuron) {
     'use strict';
     var s = new Synapse(neuron);
     this.postSynapses.add(s);
+    s.onuseless.add(function (event) {
+        this.postSynapses.delete(event.data.synapse);
+        this.ondeletepostsynapse.fire({synapse: event.data.synapse});
+    }.bind(this));
     this.onaddpostsynapse.fire({synapse: s});
 };
 
@@ -45,6 +50,11 @@ Neuron.prototype.connect = function (network) {
 Neuron.prototype.distance = function (other) {
     'use strict';
     return Math.sqrt(Math.pow(this.x - other.x, 2) + Math.pow(this.y - other.y, 2));
+};
+
+Neuron.prototype.reward = function (value) {
+    'use strict';
+    this.postSynapses.forEach(function (s) { s.reward(value); });
 };
 
 Neuron.prototype.stimulate = function (s) {

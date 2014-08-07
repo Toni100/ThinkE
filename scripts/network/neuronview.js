@@ -2,12 +2,17 @@
 
 function NeuronView(neuron, networkView) {
     'use strict';
-    this.postSynapses = [];
+    this.postSynapses = new Map();
     neuron.postSynapses.forEach(function (s) {
-        this.postSynapses.push(new SynapseView(s, networkView));
+        this.postSynapses.set(s, new SynapseView(s, networkView));
     }, this);
     neuron.onaddpostsynapse.add(function (event) {
-        this.postSynapses.push(new SynapseView(event.data.synapse, networkView));
+        this.postSynapses.set(event.data.synapse, new SynapseView(event.data.synapse, networkView));
+        networkView.drawDelayed();
+    }.bind(this));
+    neuron.ondeletepostsynapse.add(function (event) {
+        this.postSynapses.delete(event.data.synapse);
+        networkView.drawDelayed();
     }.bind(this));
     Object.defineProperty(this, 'color', {
         get: function () {
