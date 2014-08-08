@@ -5,9 +5,14 @@
 function GraphView(graph, canvas) {
     'use strict';
     this.vertices = new Map();
+    this.reducedVertices = [];
     this.edges = new Map();
+    this.reducedEdges = [];
     this.triggers = new Map();
-    this.canvas = zoomify(canvas, this.draw.bind(this));
+    this.canvas = zoomify(canvas, function () {
+        this.draw();
+        this.updateReducedView();
+    }.bind(this));
     this.canvas.onmousemove = function (event) {
         this.pointerX = event.layerX;
         this.pointerY = event.layerY;
@@ -26,14 +31,15 @@ function GraphView(graph, canvas) {
         );
     }, this);
     this.graph.onaddvertex.add(function (event) {
-        this.vertices.set(event.data.id, new VertexView(event.data.id, this, event.data.view));
+        var vw = new VertexView(event.data.id, this, event.data.view);
+        this.vertices.set(vw.id, vw);
+        this.reducedVertices.push(vw);
         this.layOut();
     }.bind(this));
     this.graph.onaddedge.add(function (event) {
-        this.edges.set(
-            event.data.id,
-            new EdgeView(event.data.id, this.vertices.get(event.data.vertex1id), this.vertices.get(event.data.vertex2id))
-        );
+        var ev = new EdgeView(event.data.id, this.vertices.get(event.data.vertex1id), this.vertices.get(event.data.vertex2id));
+        this.edges.set(ev.id, ev);
+        this.reducedEdges.push(ev);
         this.layOut();
     }.bind(this));
     this.graph.ondeleteedge.add(function (event) {
@@ -72,14 +78,14 @@ GraphView.prototype.draw = function () {
         // edges
         context.beginPath();
         context.strokeStyle = 'rgba(100, 100, 100, 0.5)';
-        this.edges.forEach(function (e) {
+        this.reducedEdges.forEach(function (e) {
             context.moveTo(e.vertex1.xt, e.vertex1.yt);
             context.lineTo(e.vertex2.xt, e.vertex2.yt);
         });
         context.stroke();
 
         // vertices
-        this.vertices.forEach(function (v) {
+        this.reducedVertices.forEach(function (v) {
             v.draw(context);
         }, this);
     }.bind(this));
@@ -98,6 +104,7 @@ GraphView.prototype.filter = function (vertexIDs, canvas) {
             gv.edges.set(e.id, e.copy(gv.vertices.get(e.vertex1.id), gv.vertices.get(e.vertex2.id)));
         }
     });
+    gv.updateReducedView(50);
     gv.layOut();
     return gv;
 };
@@ -105,6 +112,7 @@ GraphView.prototype.filter = function (vertexIDs, canvas) {
 GraphView.prototype.layOut = function () {
     'use strict';
     this.animationFramesRemaining = 200;
+    this.updateReducedView();
     if (this.animationRunning) {
         return;
     }
@@ -132,4 +140,26 @@ GraphView.prototype.layOutStep = function () {
     requestAnimationFrame(function () {
         this.layOutStep();
     }.bind(this));
+};
+
+GraphView.prototype.updateReducedView = function (delay) {
+    'use strict';
+    if (this.updatingReducedView) { return; }
+    this.updatingReducedView = true;
+    setTimeout(function () {
+        this.updatingReducedView = false;
+
+        this.reducedVertices = [];
+        this.vertices.forEach(function (v) {
+            if (v.visible) { this.reducedVertices.push(v); }
+        }, this);
+        this.reducedVertices = randomSample(this.reducedVertices, 200);
+
+        this.reducedEdges = [];
+        this.edges.forEach(function (e) {
+            if (e.vertex1.visible || e.vertex2.visible) { this.reducedEdges.push(e); }
+        }, this);
+        this.reducedEdges = randomSample(this.reducedEdges, 800);
+        this.draw();
+    }.bind(this), typeof delay === 'number' ? delay : 1800);
 };
