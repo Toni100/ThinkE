@@ -1,6 +1,6 @@
 /*jslint browser: true */
 /*global VertexView, EdgeView, TriggerView, zoomify, randomSample */
-/*global requestAnimationFrame */
+/*global requestAnimationFrame, Worker */
 
 function GraphView(graph, canvas) {
     'use strict';
@@ -13,49 +13,76 @@ function GraphView(graph, canvas) {
         this.draw();
         this.updateReducedView();
     }.bind(this));
-    this.canvas.onmousemove = function (event) {
-        this.pointerX = event.layerX;
-        this.pointerY = event.layerY;
+    this.layout = new Worker('scripts/graph/layout.js');
+    this.layout.onmessage = function (event) {
+        if (event.data.vertices) {
+            event.data.vertices.forEach(function (v) {
+                var vw = this.vertices.get(v.id);
+                if (!vw) { return; }
+                vw.x = v.x;
+                vw.y = v.y;
+            }, this);
+            this.draw();
+            this.updateReducedView();
+        }
     }.bind(this);
-    if (!graph) {
-        return;
+    this.canvas.onmousemove = function (event) {
+        this.layout.postMessage({setpointer: {
+            x: (event.layerX - this.canvas.shiftX) / this.canvas.zoom,
+            y: (event.layerY - this.canvas.shiftY) / this.canvas.zoom
+        }});
+    }.bind(this);
+    if (graph) {
+        graph.vertices.forEach(function (v) {
+            this.vertices.set(v.id, new VertexView(v.id, this));
+        }, this);
+        graph.edges.forEach(function (e) {
+            this.edges.set(e.id, new EdgeView(e.id, this.vertices.get(e.vertex1.id), this.vertices.get(e.vertex2.id)));
+        }, this);
+        graph.onaddvertex.add(function (event) {
+            this.addVertex(new VertexView(event.data.id, this, event.data.view));
+        }.bind(this));
+        graph.onaddedge.add(function (event) {
+            this.addEdge(new EdgeView(event.data.id, this.vertices.get(event.data.vertex1id), this.vertices.get(event.data.vertex2id)));
+        }.bind(this));
+        graph.ondeleteedge.add(function (event) {
+            this.deleteEdge(event.data.id);
+        }.bind(this));
+        graph.ondeletevertex.add(function (event) {
+            this.deleteVertex(event.data.id);
+        }.bind(this));
+        this.graph = graph;
+        graph.onaddtrigger.add(function (event) {
+            this.triggers.set(event.data.id, new TriggerView(event.data.id, this));
+        }.bind(this));
     }
-    this.graph = graph;
-    this.graph.vertices.forEach(function (v) {
-        this.vertices.set(v.id, new VertexView(v.id, this));
-    }, this);
-    this.graph.edges.forEach(function (e) {
-        this.edges.set(
-            e.id,
-            new EdgeView(e.id, this.vertices.get(e.vertex1.id), this.vertices.get(e.vertex2.id))
-        );
-    }, this);
-    this.graph.onaddvertex.add(function (event) {
-        var vw = new VertexView(event.data.id, this, event.data.view);
-        this.vertices.set(vw.id, vw);
-        this.reducedVertices.push(vw);
-        this.layOut();
-    }.bind(this));
-    this.graph.onaddedge.add(function (event) {
-        var ev = new EdgeView(event.data.id, this.vertices.get(event.data.vertex1id), this.vertices.get(event.data.vertex2id));
-        this.edges.set(ev.id, ev);
-        this.reducedEdges.push(ev);
-        this.layOut();
-    }.bind(this));
-    this.graph.ondeleteedge.add(function (event) {
-        this.edges.get(event.data.id).vertex1.weight -= 1;
-        this.edges.get(event.data.id).vertex2.weight -= 1;
-        this.edges.delete(event.data.id);
-        this.layOut();
-    }.bind(this));
-    this.graph.ondeletevertex.add(function (event) {
-        this.vertices.delete(event.data.id);
-        this.layOut();
-    }.bind(this));
-    this.graph.onaddtrigger.add(function (event) {
-        this.triggers.set(event.data.id, new TriggerView(event.data.id, this));
-    }.bind(this));
 }
+
+GraphView.prototype.addEdge = function (ev) {
+    'use strict';
+    this.edges.set(ev.id, ev);
+    this.reducedEdges.push(ev);
+    this.layout.postMessage({addedges: [{id: ev.id, v1id: ev.vertex1.id, v2id: ev.vertex2.id}]});
+};
+
+GraphView.prototype.addVertex = function (vw) {
+    'use strict';
+    this.vertices.set(vw.id, vw);
+    this.reducedVertices.push(vw);
+    this.layout.postMessage({addvertices: [{id: vw.id, x: vw.x, y: vw.y}]});
+};
+
+GraphView.prototype.deleteEdge = function (id) {
+    'use strict';
+    this.edges.delete(id);
+    this.layout.postMessage({deleteedges: [{id: id}]});
+};
+
+GraphView.prototype.deleteVertex = function (id) {
+    'use strict';
+    this.vertices.delete(id);
+    this.layout.postMessage({id: id});
+};
 
 GraphView.prototype.draw = function () {
     'use strict';
@@ -96,50 +123,15 @@ GraphView.prototype.filter = function (vertexIDs, canvas) {
     var gv = new GraphView(null, canvas);
     this.vertices.forEach(function (v) {
         if (vertexIDs.indexOf(v.id) !== -1) {
-            gv.vertices.set(v.id, new VertexView(v.id, gv, v.displayCache));
+            gv.addVertex(new VertexView(v.id, gv, v.displayCache));
         }
     });
     this.edges.forEach(function (e) {
         if (gv.vertices.has(e.vertex1.id) && gv.vertices.has(e.vertex2.id)) {
-            gv.edges.set(e.id, e.copy(gv.vertices.get(e.vertex1.id), gv.vertices.get(e.vertex2.id)));
+            gv.addEdge(e.copy(gv.vertices.get(e.vertex1.id), gv.vertices.get(e.vertex2.id)));
         }
     });
-    gv.updateReducedView(50);
-    gv.layOut();
     return gv;
-};
-
-GraphView.prototype.layOut = function () {
-    'use strict';
-    this.animationFramesRemaining = 200;
-    this.updateReducedView();
-    if (this.animationRunning) {
-        return;
-    }
-    this.animationRunning = true;
-    requestAnimationFrame(function () {
-        this.layOutStep();
-    }.bind(this));
-};
-
-GraphView.prototype.layOutStep = function () {
-    'use strict';
-    if (!this.animationFramesRemaining) {
-        this.animationRunning = false;
-        return;
-    }
-    this.animationFramesRemaining -= 1;
-    randomSample(this.vertices, Math.ceil(5000 / this.vertices.size)).forEach(function (v1) {
-        this.vertices.forEach(function (v2) {
-            v1.repelFrom(v2);
-        });
-    }, this);
-    randomSample(this.edges, 500).forEach(function (e) { e.attract(); });
-    this.vertices.forEach(function (v) { v.move(); });
-    this.draw();
-    requestAnimationFrame(function () {
-        this.layOutStep();
-    }.bind(this));
 };
 
 GraphView.prototype.updateReducedView = function (delay) {

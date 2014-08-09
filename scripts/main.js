@@ -76,7 +76,7 @@ graph.ondeletevertex.add(setVertexCount);
         graphView.filter(
             graph.nearest(last, 1),
             canvas
-        ).vertices.get(last).fix(canvas.width / 2, canvas.height / 2);
+        ).layout.postMessage({fixvertex: {id: last, x: canvas.width / 2, y: canvas.height / 2}});
     }
     graph.onvertexconnected.add(function (event) {
         last = event.data.id;
