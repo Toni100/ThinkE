@@ -8,13 +8,7 @@ function Graph() {
     this.triggers = new Map();
     this.edges = new Map();
     this.queue = new Queue();
-    this.makeID = (function () {
-        var id = 0;
-        return function () {
-            id += 1;
-            return id;
-        };
-    }());
+    this.makeID = makeCounter();
     this.minVertices = 1;
     this.connect = new Worker('scripts/graph/connect.js');
     this.connect.onmessage = function (event) {
