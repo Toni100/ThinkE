@@ -90,3 +90,7 @@ graph.ondeletevertex.add(setVertexCount);
 // for (i = 1; i <= 100; i += 1) {
 //     graph.add(Math.round(Math.random() * 1000000));
 // }
+
+// setInterval(function () {
+//     network.reward(-1 + 2 * Math.random());
+// }, 1000);

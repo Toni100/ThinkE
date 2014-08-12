@@ -1,18 +1,34 @@
 /*jslint browser: true */
-/*global NeuronView, zoomify, requestAnimationFrame */
+/*global NeuronView, requestAnimationFrame, SynapseView, zoomify */
 
 function NetworkView(network, canvas) {
     'use strict';
     this.canvas = zoomify(canvas, this.draw.bind(this));
     this.neurons = new Map();
     network.neurons.forEach(function (n) {
-        this.neurons.set(n, new NeuronView(n, this));
+        this.neurons.set(n.id, new NeuronView(n, this));
     }, this);
     network.onaddneuron.add(function (event) {
-        this.neurons.set(event.data.neuron, new NeuronView(event.data.neuron, this));
+        this.neurons.set(event.data.neuron.id, new NeuronView(event.data.neuron, this));
         this.drawDelayed();
     }.bind(this));
-    network.onreward.add(this.drawDelayed.bind(this));
+    network.onaddsynapse.add(function (event) {
+        this.neurons.get(event.data.n1id).postSynapses.set(
+            event.data.n2id,
+            new SynapseView(this.neurons.get(event.data.n2id), event.data.weight, event.data.direction)
+        );
+        this.drawDelayed();
+    }.bind(this));
+    network.ondeletesynapse.add(function (event) {
+        this.neurons.get(event.data.n1id).postSynapses.delete(event.data.n2id);
+        this.drawDelayed();
+    }.bind(this));
+    network.onchangeweights.add(function (event) {
+        event.data.weights.forEach(function (s) {
+            this.neurons.get(s.n1id).postSynapses.get(s.n2id).weight = s.weight;
+        }, this);
+        this.drawDelayed();
+    }.bind(this));
     this.draw();
 }
 

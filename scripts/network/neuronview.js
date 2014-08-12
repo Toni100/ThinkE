@@ -3,21 +3,10 @@
 function NeuronView(neuron, networkView) {
     'use strict';
     this.postSynapses = new Map();
-    neuron.postSynapses.forEach(function (s) {
-        this.postSynapses.set(s, new SynapseView(s, networkView));
-    }, this);
-    neuron.onaddpostsynapse.add(function (event) {
-        this.postSynapses.set(event.data.synapse, new SynapseView(event.data.synapse, networkView));
-        networkView.drawDelayed();
-    }.bind(this));
-    neuron.ondeletepostsynapse.add(function (event) {
-        this.postSynapses.delete(event.data.synapse);
-        networkView.drawDelayed();
-    }.bind(this));
     Object.defineProperty(this, 'color', {
         get: function () {
-            if (neuron.flags.action) { return 'rgb(0, 255, 255)'; }
-            if (neuron.flags.input) { return 'red'; }
+            if (neuron.onfire.handlers.size) { return 'rgb(0, 255, 255)'; }
+            if (neuron.inputID) { return 'red'; }
             return 'rgb(255, 210, 130)';
         }
     });
