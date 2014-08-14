@@ -3,6 +3,7 @@
 
 var graph = new Graph(),
     network = new Network(),
+    queue = new Queue(),
     graphView = new GraphView(graph, document.getElementById('graph')),
     networkView = new NetworkView(network, document.getElementById('network')),
     i;
@@ -18,8 +19,11 @@ graph.onaddtrigger.add(function (event) {
 });
 graph.onvertexconnected.add(function (event) {
     'use strict';
-    graph.nearestTriggers(event.data.id, 2).forEach(function (id) {
-        network.stimulate(id);
+    queue.add(function () {
+        graph.nearestTriggers(event.data.id, 2).forEach(function (id) {
+            network.stimulate(id);
+        });
+        queue.next();
     });
 });
 
