@@ -13,6 +13,12 @@ Diff.prototype.add = function (element) {
     }
 };
 
+Diff.prototype.clear = function () {
+    'use strict';
+    this.added.clear();
+    this.deleted.clear();
+};
+
 Diff.prototype.delete = function (element) {
     'use strict';
     if (this.added.has(element)) {

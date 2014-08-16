@@ -48,7 +48,7 @@ function Graph() {
     this.onaddtrigger = new EventHandlerList();
     this.onaddvertex.add(function (event) {
         this.connect.postMessage(
-            {add: {id: event.data.id, value: event.data.feature}},
+            {addVertex: {id: event.data.id, value: event.data.feature}},
             event.data.feature instanceof ArrayBuffer ? [event.data.feature] : []
         );
         if (this.triggers.size / this.vertices.size < 0.1) {

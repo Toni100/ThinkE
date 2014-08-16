@@ -1,3 +1,4 @@
+/*jslint browser: true */
 /*global self, compare, Diff, makeCounter, SortedList, deleteDuplicates */
 
 // for Firefox < 32
@@ -14,20 +15,45 @@ self.importScripts('../utilities/array.js', '../utilities/counter.js', '../utili
 
 var maxEdges = 4,
     vertices = new Map(),
-    makeID = makeCounter();
+    makeID = makeCounter(),
+    vertexDiff = new Diff(),
+    edgeDiff = new Diff(),
+    postingChanges;
+
+function postChanges() {
+    'use strict';
+    if (postingChanges) { return; }
+    postingChanges = true;
+    setTimeout(function () {
+        postingChanges = false;
+        self.postMessage({
+            addedEdges: Array.from(edgeDiff.added).map(function (e) {
+                return [e.vertex1.id, e.vertex2.id, e.id];
+            }),
+            deletedEdges: Array.from(edgeDiff.deleted).map(function (e) {
+                return e.id;
+            })
+        });
+        vertexDiff.added.forEach(function (v) {
+            self.postMessage({vertexConnected: {id: v.id}});
+        });
+        vertexDiff.clear();
+        edgeDiff.clear();
+    }, 40);
+}
 
 function Edge(vertex1, vertex2, score) {
     'use strict';
+    this.id = makeID();
     this.vertex1 = vertex1;
     this.vertex2 = vertex2;
     this.score = typeof score === 'number' ? score : compare(vertex1.value, vertex2.value);
-    this.id = makeID();
 }
 
-function Vertex(value, id) {
+function Vertex(id, value) {
     'use strict';
-    this.value = value;
     this.id = id;
+    this.value = value;
     this.edgeCache = new SortedList(function (a, b) {
         return a.score >= b.score;
     });
@@ -38,14 +64,12 @@ function Vertex(value, id) {
 
 Vertex.prototype.addEdge = function (edge) {
     'use strict';
-    var diff = new Diff();
     if (this.edgeCache.add(edge) < maxEdges) {
-        diff.add(edge);
+        edgeDiff.add(edge);
         if (this.edgeCache.length > maxEdges) {
-            diff.delete(this.edgeCache.get(maxEdges));
+            edgeDiff.delete(this.edgeCache.get(maxEdges));
         }
     }
-    return diff;
 };
 
 Vertex.prototype.deleteEdgeByVertexID = function (id) {
@@ -94,47 +118,31 @@ Vertex.prototype.similar = function (vertex) {
     }, this);
 };
 
-function postChanges(diff) {
+function addVertex(id, value) {
     'use strict';
-    self.postMessage({
-        deletedEdges: Array.from(diff.deleted).map(function (e) {
-            return e.id;
-        }),
-        addedEdges: Array.from(diff.added).map(function (e) {
-            return [e.vertex1.id, e.vertex2.id, e.id];
-        })
-    });
-}
-
-function add(id, value) {
-    'use strict';
-    var vertex = new Vertex(value, id),
-        diff = new Diff(),
+    var vertex = new Vertex(id, value),
         e;
     vertices.forEach(function (v) {
         e = new Edge(v, vertex);
-        diff.merge(v.addEdge(e));
+        v.addEdge(e);
         e = new Edge(vertex, v, e.score);
-        diff.merge(vertex.addEdge(e));
+        vertex.addEdge(e);
     });
     vertices.set(vertex.id, vertex);
-    postChanges(diff);
-    self.postMessage({
-        vertexConnected: {id: id}
-    });
+    vertexDiff.add(vertex);
+    postChanges();
 }
 
 function deleteVertex(id) {
     'use strict';
-    var diff = new Diff();
     vertices.get(id).edges.forEach(function (e) {
-        diff.delete(e);
+        edgeDiff.delete(e);
     });
     vertices.delete(id);
     vertices.forEach(function (v) {
-        diff.merge(v.deleteEdgeByVertexID(id));
+        edgeDiff.merge(v.deleteEdgeByVertexID(id));
     });
-    postChanges(diff);
+    postChanges();
 }
 
 function getSimilarVertices() {
@@ -160,8 +168,8 @@ function getSimilarVertices() {
 
 self.onmessage = function (event) {
     'use strict';
-    if (event.data.add) {
-        add(event.data.add.id, event.data.add.value);
+    if (event.data.addVertex) {
+        addVertex(event.data.addVertex.id, event.data.addVertex.value);
     }
     if (event.data.deleteVertex) {
         deleteVertex(event.data.deleteVertex.id);
