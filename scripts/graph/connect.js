@@ -1,4 +1,4 @@
-/*global self, compare, Diff, SortedList, deleteDuplicates */
+/*global self, compare, Diff, makeCounter, SortedList, deleteDuplicates */
 
 // for Firefox < 32
 Array.from = function (iterable) {
@@ -10,19 +10,11 @@ Array.from = function (iterable) {
     return arr;
 };
 
-self.importScripts('../utilities/array.js', '../utilities/diff.js', '../utilities/sortedlist.js', 'compare.js');
+self.importScripts('../utilities/array.js', '../utilities/counter.js', '../utilities/diff.js', '../utilities/sortedlist.js', 'compare.js');
 
 var maxEdges = 4,
-    vertices = new Map();
-
-var makeID = (function () {
-    'use strict';
-    var id = 0;
-    return function () {
-        id += 1;
-        return id;
-    };
-}());
+    vertices = new Map(),
+    makeID = makeCounter();
 
 function Edge(vertex1, vertex2, score) {
     'use strict';
