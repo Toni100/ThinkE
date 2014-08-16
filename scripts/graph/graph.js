@@ -137,19 +137,6 @@ Graph.prototype.deleteSimilarVertices = function () {
     }.bind(this), 2000);
 };
 
-Graph.prototype.getRandomVertices = function (n) {
-    'use strict';
-    var random = [];
-    this.vertices.forEach(function (v) {
-        if (random.length < n) {
-            if (Math.random() < n / this.vertices.size) {
-                random.push(v.id);
-            }
-        }
-    }, this);
-    return random;
-};
-
 Graph.prototype.in = function (id) {
     'use strict';
     var incoming = [];
