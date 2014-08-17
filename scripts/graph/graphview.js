@@ -81,7 +81,7 @@ GraphView.prototype.deleteEdge = function (id) {
 GraphView.prototype.deleteVertex = function (id) {
     'use strict';
     this.vertices.delete(id);
-    this.layout.postMessage({id: id});
+    this.layout.postMessage({deletevertices: [{id: id}]});
 };
 
 GraphView.prototype.draw = function () {
