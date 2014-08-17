@@ -1,16 +1,20 @@
 /*jslint browser: true */
-/*global NeuronView, requestAnimationFrame, SynapseView, zoomify */
+/*global NeuronView, randomSample, requestAnimationFrame, SynapseView, zoomify */
 
 function NetworkView(network, canvas) {
     'use strict';
-    this.canvas = zoomify(canvas, this.draw.bind(this));
     this.neurons = new Map();
+    this.reducedNeurons = [];
+    this.canvas = zoomify(canvas, function () {
+        this.draw();
+        this.updateReducedView(60);
+    }.bind(this));
     network.neurons.forEach(function (n) {
         this.neurons.set(n.id, new NeuronView(n, this));
     }, this);
     network.onaddneuron.add(function (event) {
         this.neurons.set(event.data.neuron.id, new NeuronView(event.data.neuron, this));
-        this.drawDelayed();
+        this.updateReducedView();
     }.bind(this));
     network.onaddsynapse.add(function (event) {
         this.neurons.get(event.data.n1id).postSynapses.set(
@@ -42,7 +46,7 @@ NetworkView.prototype.draw = function () {
         context.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
         // synapses
-        this.neurons.forEach(function (n) {
+        this.reducedNeurons.forEach(function (n) {
             n.postSynapses.forEach(function (s) {
                 context.beginPath();
                 context.strokeStyle = s.color;
@@ -53,7 +57,7 @@ NetworkView.prototype.draw = function () {
         });
 
         // neurons
-        this.neurons.forEach(function (n) {
+        this.reducedNeurons.forEach(function (n) {
             context.fillStyle = n.color;
             context.fillRect(n.xt - 2, n.yt - 2, 4, 4);
         });
@@ -68,4 +72,19 @@ NetworkView.prototype.drawDelayed = function () {
         this.drawingDelayed = false;
         this.draw();
     }.bind(this), 1000);
+};
+
+NetworkView.prototype.updateReducedView = function (delay) {
+    'use strict';
+    if (this.updatingReducedView) { return; }
+    this.updatingReducedView = true;
+    setTimeout(function () {
+        this.updatingReducedView = false;
+        this.reducedNeurons = [];
+        this.neurons.forEach(function (n) {
+            if (n.visible) { this.reducedNeurons.push(n); }
+        }, this);
+        this.reducedNeurons = randomSample(this.reducedNeurons, 300);
+        this.drawDelayed();
+    }.bind(this), typeof delay === 'number' ? delay : 1800);
 };

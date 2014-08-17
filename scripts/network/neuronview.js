@@ -10,6 +10,12 @@ function NeuronView(neuron, networkView) {
             return 'rgb(255, 210, 130)';
         }
     });
+    Object.defineProperty(this, 'visible', {
+        get: function () {
+            return 0 < this.xt && this.xt < networkView.canvas.width &&
+                0 < this.yt && this.yt < networkView.canvas.height;
+        }
+    });
     Object.defineProperty(this, 'xt', {
         get: function () {
             return networkView.canvas.width * neuron.x * networkView.canvas.zoom + networkView.canvas.shiftX;
