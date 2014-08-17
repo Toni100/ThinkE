@@ -145,25 +145,25 @@ function deleteVertex(id) {
     postChanges();
 }
 
-function getSimilarVertices() {
+function searchDuplicates(id) {
     'use strict';
-    var similar = [], arr = Array.from(vertices), i, j;
+    var result = [], arr = Array.from(vertices), i, j;
     for (i = 0; i < arr.length; i += 1) {
         for (j = i + 1; j < arr.length; j += 1) {
             if (arr[i].similar(arr[j])) {
-                similar.push([arr[i], arr[j]]);
+                result.push([arr[i], arr[j]]);
             }
         }
     }
-    similar.forEach(function (pair) {
+    result.forEach(function (pair) {
         pair.sort(function (v1, v2) { return v1.score() >= v2.score(); });
     });
-    similar = similar.map(function (pair) { return pair[0]; });
-    similar.sort(function (v1, v2) { return v1.score() >= v2.score(); });
-    similar = deleteDuplicates(similar);
-    similar = similar.filter(function (v) { return v.score() > 0.1; });
-    similar = similar.map(function (v) { return v.id; });
-    self.postMessage({similarVertices: similar});
+    result = result.map(function (pair) { return pair[0]; });
+    result.sort(function (v1, v2) { return v1.score() >= v2.score(); });
+    result = deleteDuplicates(result);
+    result = result.filter(function (v) { return v.score() > 0.1; });
+    result = result.map(function (v) { return v.id; });
+    self.postMessage({foundDuplicates: {id: id, result: result}});
 }
 
 function searchSimilar(id, value, n) {
@@ -187,8 +187,8 @@ self.onmessage = function (event) {
     if (event.data.deleteVertex) {
         deleteVertex(event.data.deleteVertex.id);
     }
-    if (event.data.getSimilarVertices) {
-        getSimilarVertices();
+    if (event.data.searchDuplicates) {
+        searchDuplicates(event.data.searchDuplicates.id);
     }
     if (event.data.searchSimilar) {
         searchSimilar(event.data.searchSimilar.id, event.data.searchSimilar.value, event.data.searchSimilar.n);

@@ -10,7 +10,7 @@ function Graph() {
     this.queue = new Queue();
     this.searches = new Map();
     this.makeID = makeCounter();
-    this.minVertices = 1;
+    this.minVertices = 10;
     this.connect = new Worker('scripts/graph/connect.js');
     this.connect.onmessage = function (event) {
         if (event.data.addedEdges) {
@@ -20,25 +20,17 @@ function Graph() {
         }
         if (event.data.deletedEdges) {
             event.data.deletedEdges.forEach(function (id) {
-                if (!this.edges.has(id)) { return; } // check why this can happen in deleteSimilarVertices
-                this.ondeleteedge.fire({id: id});
+                if (!this.edges.has(id)) { return; }
                 this.edges.delete(id);
+                this.ondeleteedge.fire({id: id});
             }, this);
-        }
-        if (event.data.similarVertices) {
-            this.deletingSimilarVertices = false;
-            if (event.data.similarVertices.length) {
-                if (!event.data.similarVertices.some(function (id) {
-                    if (this.vertices.size <= this.minVertices) { return true; }
-                    this.ondeletevertex.fire({id: id});
-                    this.vertices.delete(id);
-                }, this)) {
-                    this.deleteSimilarVertices();
-                }
-            }
         }
         if (event.data.vertexConnected) {
             this.onvertexconnected.fire({id: event.data.vertexConnected.id});
+        }
+        if (event.data.foundDuplicates) {
+            this.searches.get(event.data.foundDuplicates.id)(event.data.foundDuplicates.result);
+            this.searches.delete(event.data.foundDuplicates.id);
         }
         if (event.data.foundSimilar) {
             this.searches.get(event.data.foundSimilar.id)(event.data.foundSimilar.result);
@@ -60,12 +52,7 @@ function Graph() {
             this.addTrigger();
         }
     }.bind(this));
-    this.ondeletevertex.add(function (event) {
-        this.connect.postMessage({deleteVertex: {id: event.data.id}});
-    }.bind(this));
-    this.onvertexconnected.add(function () {
-        this.deleteSimilarVertices();
-    }.bind(this));
+    this.onvertexconnected.add(this.deleteDuplicates.bind(this));
 }
 
 Graph.prototype.add = function (value) {
@@ -131,14 +118,22 @@ Graph.prototype.addTrigger = function () {
     return id;
 };
 
-Graph.prototype.deleteSimilarVertices = function () {
+Graph.prototype.deleteDuplicates = function () {
     'use strict';
-    if (this.deletingSimilarVertices || this.vertices.size <= 1.5 * this.minVertices) {
-        return;
-    }
-    this.deletingSimilarVertices = true;
+    if (this.deletingDuplicates || this.vertices.size <= 1.5 * this.minVertices) { return; }
+    this.deletingDuplicates = true;
     setTimeout(function () {
-        this.connect.postMessage({getSimilarVertices: true});
+        this.searchDuplicates(function (result) {
+            this.deletingDuplicates = false;
+            if (!result.length) { return; }
+            result.some(function (id) {
+                this.vertices.delete(id);
+                this.connect.postMessage({deleteVertex: {id: id}});
+                this.ondeletevertex.fire({id: id});
+                return this.vertices.size <= this.minVertices;
+            }, this);
+            this.deleteDuplicates();
+        }.bind(this));
     }.bind(this), 2000);
 };
 
@@ -195,6 +190,13 @@ Graph.prototype.out = function (id) {
         }
     });
     return outgoing;
+};
+
+Graph.prototype.searchDuplicates = function (callback) {
+    'use strict';
+    var id = this.makeID();
+    this.searches.set(id, callback);
+    this.connect.postMessage({searchDuplicates: {id: id}});
 };
 
 Graph.prototype.searchSimilar = function (value, n, callback) {
