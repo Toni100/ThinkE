@@ -12,12 +12,12 @@ function NeuronView(neuron, networkView) {
     });
     Object.defineProperty(this, 'xt', {
         get: function () {
-            return (10 + (networkView.canvas.width - 20) * neuron.x) * networkView.canvas.zoom + networkView.canvas.shiftX;
+            return networkView.canvas.width * neuron.x * networkView.canvas.zoom + networkView.canvas.shiftX;
         }
     });
     Object.defineProperty(this, 'yt', {
         get: function () {
-            return (10 + (networkView.canvas.height - 20) * neuron.y) * networkView.canvas.zoom + networkView.canvas.shiftY;
+            return networkView.canvas.height * neuron.y * networkView.canvas.zoom + networkView.canvas.shiftY;
         }
     });
 }
