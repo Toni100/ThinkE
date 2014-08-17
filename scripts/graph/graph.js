@@ -8,6 +8,7 @@ function Graph() {
     this.triggers = new Map();
     this.edges = new Map();
     this.queue = new Queue();
+    this.searches = new Map();
     this.makeID = makeCounter();
     this.minVertices = 1;
     this.connect = new Worker('scripts/graph/connect.js');
@@ -38,6 +39,10 @@ function Graph() {
         }
         if (event.data.vertexConnected) {
             this.onvertexconnected.fire({id: event.data.vertexConnected.id});
+        }
+        if (event.data.foundSimilar) {
+            this.searches.get(event.data.foundSimilar.id)(event.data.foundSimilar.result);
+            this.searches.delete(event.data.foundSimilar.id);
         }
     }.bind(this);
     this.onaddvertex = new EventHandlerList();
@@ -190,4 +195,11 @@ Graph.prototype.out = function (id) {
         }
     });
     return outgoing;
+};
+
+Graph.prototype.searchSimilar = function (value, n, callback) {
+    'use strict';
+    var id = this.makeID();
+    this.searches.set(id, callback);
+    this.connect.postMessage({searchSimilar: {id: id, value: value, n: n}});
 };

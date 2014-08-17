@@ -166,6 +166,19 @@ function getSimilarVertices() {
     self.postMessage({similarVertices: similar});
 }
 
+function searchSimilar(id, value, n) {
+    'use strict';
+    var result = [];
+    vertices.forEach(function (v) {
+        result.push([v.id, compare(value, v.value)]);
+    });
+    result.sort(function (a, b) {
+        return b[1] - a[1];
+    });
+    result = result.slice(0, n);
+    self.postMessage({foundSimilar: {id: id, result: result}});
+}
+
 self.onmessage = function (event) {
     'use strict';
     if (event.data.addVertex) {
@@ -176,5 +189,8 @@ self.onmessage = function (event) {
     }
     if (event.data.getSimilarVertices) {
         getSimilarVertices();
+    }
+    if (event.data.searchSimilar) {
+        searchSimilar(event.data.searchSimilar.id, event.data.searchSimilar.value, event.data.searchSimilar.n);
     }
 };
