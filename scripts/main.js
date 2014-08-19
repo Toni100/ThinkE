@@ -1,5 +1,5 @@
 /*jslint browser: true */
-/*global Graph, Network, GraphView, NetworkView */
+/*global Graph, GraphView, Network, NetworkView, Queue, TextAction */
 
 var graph = new Graph(),
     network = new Network(),
@@ -28,7 +28,27 @@ graph.onvertexconnected.add(function (event) {
 });
 
 // actions
-makeTextAction(network, document.getElementById('textAction'));
+var textAction = new TextAction(network, document.getElementById('textAction'));
+textAction.onchangerecent.add(function (event) {
+    'use strict';
+    document.getElementById('textAction').value = event.data.recent;
+});
+textAction.onword.add(function (event) {
+    'use strict';
+    graph.searchSimilar(event.data.word, 5, function (result) {
+        if (result.length) {
+            network.reward(-0.5 + result.reduce(function (prev, curr) {
+                return prev + curr[1];
+            }, 0) / result.length);
+        } else {
+            network.reward(-0.5);
+        }
+    });
+});
+'abcdefghijklmnopqrstuvwxyz .?'.split('').forEach(function (c) {
+    'use strict';
+    network.addAction(function () { textAction.add(c); });
+});
 makeImageAction(network, document.getElementById('imageAction'));
 
 // graph fullscreen

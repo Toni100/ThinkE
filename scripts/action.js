@@ -32,19 +32,3 @@ function makeImageAction(network, canvas) {
         }(i));
     }
 }
-
-function makeTextAction(network, textarea) {
-    'use strict';
-    function addCharAction(char) {
-        network.addAction(function () {
-            var txt = textarea.value + char;
-            if (txt.length > 250) {
-                txt = txt.substr(50);
-            }
-            textarea.value = txt;
-        });
-    }
-    'abcdefghijklmnopqrstuvwxyz '.split('').forEach(function (char) {
-        addCharAction(char);
-    });
-}
