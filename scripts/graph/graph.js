@@ -157,7 +157,7 @@ Graph.prototype.nearest = function (id, n) {
         return [id];
     }
     if (n === 1) {
-        return [id].concat(this.out(id)).concat(this.in(id));
+        return deleteDuplicates([id].concat(this.out(id)).concat(this.in(id)));
     }
     var nearest = new Set();
     this.nearest(id, n - 1).forEach(function (id) {
