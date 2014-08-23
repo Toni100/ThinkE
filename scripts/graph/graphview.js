@@ -2,17 +2,57 @@
 /*global VertexView, EdgeView, TriggerView, zoomify, randomSample */
 /*global requestAnimationFrame, Worker */
 
-function GraphView(graph, canvas) {
+function GraphView(canvas, graph) {
     'use strict';
     this.vertices = new Map();
     this.reducedVertices = [];
     this.edges = new Map();
     this.reducedEdges = [];
     this.triggers = new Map();
-    this.canvas = zoomify(canvas, function () {
-        this.draw();
-        this.updateReducedView();
-    }.bind(this));
+    var g = null,
+        handleOnaddvertex = function (event) {
+            this.addVertex(new VertexView(event.data.id, this, event.data.view));
+        }.bind(this),
+        handleOnaddedge = function (event) {
+            this.addEdge(new EdgeView(event.data.id, this.vertices.get(event.data.vertex1id), this.vertices.get(event.data.vertex2id)));
+        }.bind(this),
+        handleOndeleteedge = function (event) {
+            this.deleteEdge(event.data.id);
+        }.bind(this),
+        handleOndeletevertex = function (event) {
+            this.deleteVertex(event.data.id);
+        }.bind(this),
+        handleOnaddtrigger = function (event) {
+            this.triggers.set(event.data.id, new TriggerView(event.data.id, this));
+        }.bind(this);
+    Object.defineProperty(this, 'graph', {
+        get: function () {
+            return g;
+        },
+        set: function (graph) {
+            if (g) {
+                g.onaddvertex.delete(handleOnaddvertex);
+                g.onaddedge.delete(handleOnaddedge);
+                g.ondeleteedge.delete(handleOndeleteedge);
+                g.ondeletevertex.delete(handleOndeletevertex);
+                g.onaddtrigger.delete(handleOnaddtrigger);
+            }
+            g = graph;
+            if (g) {
+                g.onaddvertex.add(handleOnaddvertex);
+                g.onaddedge.add(handleOnaddedge);
+                g.ondeleteedge.add(handleOndeleteedge);
+                g.ondeletevertex.add(handleOndeletevertex);
+                g.onaddtrigger.add(handleOnaddtrigger);
+                g.vertices.forEach(function (v) {
+                    this.vertices.set(v.id, new VertexView(v.id, this));
+                }, this);
+                g.edges.forEach(function (e) {
+                    this.edges.set(e.id, new EdgeView(e.id, this.vertices.get(e.vertex1.id), this.vertices.get(e.vertex2.id)));
+                }, this);
+            }
+        }
+    });
     this.layout = new Worker('scripts/graph/layout.js');
     this.layout.onmessage = function (event) {
         if (event.data.vertices) {
@@ -26,6 +66,10 @@ function GraphView(graph, canvas) {
             this.updateReducedView();
         }
     }.bind(this);
+    this.canvas = zoomify(canvas, function () {
+        this.draw();
+        this.updateReducedView();
+    }.bind(this));
     this.canvas.onmousemove = function (event) {
         this.layout.postMessage({setpointer: {
             x: (event.layerX - this.canvas.shiftX) / this.canvas.zoom,
@@ -33,28 +77,7 @@ function GraphView(graph, canvas) {
         }});
     }.bind(this);
     if (graph) {
-        graph.vertices.forEach(function (v) {
-            this.vertices.set(v.id, new VertexView(v.id, this));
-        }, this);
-        graph.edges.forEach(function (e) {
-            this.edges.set(e.id, new EdgeView(e.id, this.vertices.get(e.vertex1.id), this.vertices.get(e.vertex2.id)));
-        }, this);
-        graph.onaddvertex.add(function (event) {
-            this.addVertex(new VertexView(event.data.id, this, event.data.view));
-        }.bind(this));
-        graph.onaddedge.add(function (event) {
-            this.addEdge(new EdgeView(event.data.id, this.vertices.get(event.data.vertex1id), this.vertices.get(event.data.vertex2id)));
-        }.bind(this));
-        graph.ondeleteedge.add(function (event) {
-            this.deleteEdge(event.data.id);
-        }.bind(this));
-        graph.ondeletevertex.add(function (event) {
-            this.deleteVertex(event.data.id);
-        }.bind(this));
         this.graph = graph;
-        graph.onaddtrigger.add(function (event) {
-            this.triggers.set(event.data.id, new TriggerView(event.data.id, this));
-        }.bind(this));
     }
 }
 
@@ -70,6 +93,18 @@ GraphView.prototype.addVertex = function (vw) {
     this.vertices.set(vw.id, vw);
     this.reducedVertices.push(vw);
     this.layout.postMessage({addvertices: [{id: vw.id, x: vw.x, y: vw.y}]});
+};
+
+GraphView.prototype.clear = function () {
+    'use strict';
+    this.graph = null;
+    this.layout.postMessage({clear: true});
+    this.vertices.clear();
+    this.edges.clear();
+    this.triggers.clear();
+    this.reducedVertices = [];
+    this.reducedEdges = [];
+    this.draw();
 };
 
 GraphView.prototype.deleteEdge = function (id) {
@@ -116,22 +151,6 @@ GraphView.prototype.draw = function () {
             v.draw(context);
         }, this);
     }.bind(this));
-};
-
-GraphView.prototype.filter = function (vertexIDs, canvas) {
-    'use strict';
-    var gv = new GraphView(null, canvas);
-    this.vertices.forEach(function (v) {
-        if (vertexIDs.indexOf(v.id) !== -1) {
-            gv.addVertex(new VertexView(v.id, gv, v.displayCache));
-        }
-    });
-    this.edges.forEach(function (e) {
-        if (gv.vertices.has(e.vertex1.id) && gv.vertices.has(e.vertex2.id)) {
-            gv.addEdge(e.copy(gv.vertices.get(e.vertex1.id), gv.vertices.get(e.vertex2.id)));
-        }
-    });
-    return gv;
 };
 
 GraphView.prototype.updateReducedView = function (delay) {

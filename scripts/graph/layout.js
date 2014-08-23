@@ -158,6 +158,10 @@ self.onmessage = function (event) {
         v.x = event.data.fixvertex.x;
         v.y = event.data.fixvertex.y;
     }
+    if (event.data.clear) {
+        this.vertices.clear();
+        this.edges.clear();
+    }
 };
 
 // for Firefox < 32

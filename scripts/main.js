@@ -4,8 +4,9 @@
 var graph = new Graph(),
     network = new Network(),
     queue = new Queue(),
-    graphView = new GraphView(graph, document.getElementById('graph')),
+    graphView = new GraphView(document.getElementById('graph'), graph),
     networkView = new NetworkView(network, document.getElementById('network')),
+    context = new GraphView(document.getElementById('context')),
     i;
 
 for (i = 0; i < 200; i += 1) {
@@ -91,16 +92,22 @@ graph.ondeletevertex.add(setVertexCount);
 // context
 (function () {
     'use strict';
-    var canvas = document.getElementById('context'),
-        last = 0,
+    var last = 0,
         running = false;
     function showContext() {
         running = false;
         if (!graph.vertices.has(last)) { return; }
-        graphView.filter(
-            graph.nearest(last, 1),
-            canvas
-        ).layout.postMessage({fixvertex: {id: last, x: canvas.width / 2, y: canvas.height / 2}});
+        context.clear();
+        graph.nearest(last, 1).forEach(function (id) {
+            var v = graphView.vertices.get(id);
+            context.addVertex(new VertexView(v.id, context, v.displayCache));
+        });
+        graphView.edges.forEach(function (e) {
+            if (context.vertices.has(e.vertex1.id) && context.vertices.has(e.vertex2.id)) {
+                context.addEdge(new EdgeView(e.id, context.vertices.get(e.vertex1.id), context.vertices.get(e.vertex2.id)));
+            }
+        });
+        context.layout.postMessage({fixvertex: {id: last, x: context.canvas.width / 2, y: context.canvas.height / 2}});
     }
     graph.onvertexconnected.add(function (event) {
         last = event.data.id;
