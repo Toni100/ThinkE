@@ -3,9 +3,10 @@
 
 var graph = new Graph(),
     network = new Network(),
+    inputNeurons = new Map(),
     queue = new Queue(),
     graphView = new GraphView(document.getElementById('graph'), graph),
-    networkView = new NetworkView(network, document.getElementById('network')),
+    networkView = new NetworkView(document.getElementById('network'), network),
     context = new GraphView(document.getElementById('context')),
     i;
 
@@ -16,13 +17,13 @@ for (i = 0; i < 200; i += 1) {
 // connect graph to network
 graph.onaddtrigger.add(function (event) {
     'use strict';
-    network.addInput(event.data.id);
+    inputNeurons.set(event.data.id, network.addNeuron());
 });
 graph.onvertexconnected.add(function (event) {
     'use strict';
     queue.add(function () {
         graph.nearestTriggers(event.data.id, 2).forEach(function (id) {
-            network.stimulate(id);
+            inputNeurons.get(id).stimulate(1);
         });
         queue.next();
     });

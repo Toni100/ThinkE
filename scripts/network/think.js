@@ -16,7 +16,24 @@ function connectNeurons() {
         neurons.forEach(function (n) {
             while (n.postSynapses.size < 4) { n.connect(); }
         });
-    }, 500);
+    }, 1000);
+}
+
+function getSynapses(id) {
+    'use strict';
+    var synapses = [];
+    neurons.forEach(function (n) {
+        n.postSynapses.forEach(function (s) {
+            synapses.push({
+                id: s.id,
+                n1id: n.id,
+                n2id: s.postNeuron.id,
+                weight: s.weight,
+                direction: s.direction
+            });
+        });
+    });
+    self.postMessage({synapses: {id: id, value: synapses}});
 }
 
 function postWeights() {
@@ -56,7 +73,7 @@ function Synapse(postNeuron) {
 Synapse.prototype.reward = function (value) {
     'use strict';
     if (!this.activity) { return; }
-    this.weight *= Math.exp(0.3 * value * this.activity);
+    this.weight *= Math.exp(0.2 * value * Math.min(this.activity, 5));
     this.weight = Math.min(1, this.weight);
     postWeights();
     if (this.weight < 0.15) {
@@ -83,13 +100,17 @@ function Neuron(id, x, y) {
 Neuron.prototype.connect = function () {
     'use strict';
     if (!neurons.size) { return; }
-    var candidates = new Set(neurons.values()),
+    var candidates = [],
         n,
         s;
-    candidates.delete(this);
-    this.postSynapses.forEach(function (s) { candidates.delete(s.postNeuron); });
+    neurons.forEach(function (n) {
+        if (n !== this) { candidates.push(n); }
+    }, this);
+    this.postSynapses.forEach(function (s) {
+        candidates.splice(candidates.indexOf(s.postNeuron), 1);
+    });
     n = randomChoice(candidates);
-    randomSample(candidates, 15).forEach(function (c) {
+    randomSample(candidates, neurons.size / 20).forEach(function (c) {
         if (c.distance(this) < n.distance(this)) { n = c; }
     }, this);
     s = new Synapse(n);
@@ -115,11 +136,11 @@ Neuron.prototype.stimulate = function (strength) {
     var s = this.potential / 2;
     this.potential = 0;
     this.postSynapses.forEach(function (ps) { ps.stimulate(s); });
-    self.postMessage({fire: {id: this.id, strength: s}});
+    self.postMessage({fireneuron: {id: this.id, strength: s}});
     setTimeout(function () {
         this.charging = false;
         this.stimulate(0);
-    }.bind(this), 400);
+    }.bind(this), 100);
 };
 
 self.onmessage = function (event) {
@@ -136,5 +157,8 @@ self.onmessage = function (event) {
     }
     if (event.data.reward) {
         reward(event.data.reward.value);
+    }
+    if (event.data.getsynapses) {
+        getSynapses(event.data.getsynapses.id);
     }
 };
