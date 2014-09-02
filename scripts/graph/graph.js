@@ -1,6 +1,61 @@
 /*jslint browser: true */
-/*global Edge, Vertex, EventHandlerList, Queue, imageToArrayBuffer, Trigger */
+/*global deleteDuplicates, EventHandlerList, imageToArrayBuffer, makeCounter, Queue, randomChoice, randomSample */
 /*global Worker, File, ArrayBuffer */
+
+function Vertex(id, value) {
+    'use strict';
+    this.id = id;
+    this.value = value;
+}
+
+Vertex.prototype.toString = function () {
+    'use strict';
+    if (this.value instanceof File) {
+        return this.value.name;
+    }
+    return this.value.toString();
+};
+
+function Edge(id, vertex1, vertex2) {
+    'use strict';
+    this.id = id;
+    this.vertex1 = vertex1;
+    this.vertex2 = vertex2;
+}
+
+Edge.prototype.toString = function () {
+    'use strict';
+    return this.vertex1.toString() + ' -> ' + this.vertex2.toString();
+};
+
+function Trigger(id, graph) {
+    'use strict';
+    this.id = id;
+    this.vertices = new Set(randomSample([...graph.vertices.keys()], 5));
+    graph.onaddvertex.add(function (event) {
+        if (this.vertices.size < 5) {
+            this.addVertex(event.data.id);
+        }
+    }.bind(this));
+    graph.ondeletevertex.add(function (event) {
+        if (this.vertices.delete(event.data.id)) {
+            this.ondeletevertex.fire({id: event.data.id});
+            while (this.vertices.size < Math.min(5, graph.vertices.size)) {
+                this.addVertex(randomChoice([...graph.vertices.keys()]));
+            }
+        }
+    }.bind(this));
+    this.onaddvertex = new EventHandlerList();
+    this.ondeletevertex = new EventHandlerList();
+}
+
+Trigger.prototype.addVertex = function (id) {
+    'use strict';
+    if (!this.vertices.has(id)) {
+        this.vertices.add(id);
+        this.onaddvertex.fire({id: id});
+    }
+};
 
 function Graph() {
     'use strict';
