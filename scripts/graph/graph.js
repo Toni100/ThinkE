@@ -81,7 +81,7 @@ function Graph() {
             }, this);
         }
         if (event.data.vertexConnected) {
-            this.onvertexconnected.fire({id: event.data.vertexConnected.id});
+            this.onvertexconnected.fire(event.data.vertexConnected);
         }
         if (event.data.foundDuplicates) {
             this.searches.get(event.data.foundDuplicates.id)(event.data.foundDuplicates.result);
