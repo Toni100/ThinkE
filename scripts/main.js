@@ -104,8 +104,10 @@ graph.ondeletevertex.add(setVertexCount);
             context.addVertex(new VertexView(v.id, context, v.displayCache));
         });
         graphView.edges.forEach(function (e) {
-            if (context.vertices.has(e.vertex1.id) && context.vertices.has(e.vertex2.id)) {
-                context.addEdge(new EdgeView(e.id, context.vertices.get(e.vertex1.id), context.vertices.get(e.vertex2.id)));
+            var v1 = context.vertices.get(e.vertex1.id),
+                v2 = context.vertices.get(e.vertex2.id);
+            if (v1 && v2) {
+                context.addEdge(new EdgeView(e.id, v1, v2));
             }
         });
         context.layout.postMessage({fixvertex: {id: last, x: context.canvas.width / 2, y: context.canvas.height / 2}});
