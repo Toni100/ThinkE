@@ -1,16 +1,6 @@
 /*jslint browser: true */
 /*global self, compare, Diff, makeCounter, SortedList, deleteDuplicates */
 
-// for Firefox < 32
-Array.from = function (iterable) {
-    'use strict';
-    var arr = [];
-    iterable.forEach(function (e) {
-        arr.push(e);
-    });
-    return arr;
-};
-
 self.importScripts('../utilities/array.js', '../utilities/counter.js', '../utilities/diff.js', '../utilities/sortedlist.js', 'compare.js');
 
 var maxEdges = 4,
@@ -27,10 +17,10 @@ function postChanges() {
     setTimeout(function () {
         postingChanges = false;
         self.postMessage({
-            addedEdges: Array.from(edgeDiff.added).map(function (e) {
+            addedEdges: Array.from(edgeDiff.added, function (e) {
                 return [e.vertex1.id, e.vertex2.id, e.id];
             }),
-            deletedEdges: Array.from(edgeDiff.deleted).map(function (e) {
+            deletedEdges: Array.from(edgeDiff.deleted, function (e) {
                 return e.id;
             })
         });
@@ -147,7 +137,10 @@ function deleteVertex(id) {
 
 function searchDuplicates(id) {
     'use strict';
-    var result = [], arr = Array.from(vertices), i, j;
+    var result = [],
+        arr = Array.from(vertices.values()),
+        i,
+        j;
     for (i = 0; i < arr.length; i += 1) {
         for (j = i + 1; j < arr.length; j += 1) {
             if (arr[i].similar(arr[j])) {

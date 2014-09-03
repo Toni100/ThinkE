@@ -5,10 +5,7 @@ function randomInteger(min, max) {
 
 function randomChoice(list) {
     'use strict';
-    var arr = [];
-    list.forEach(function (e) {
-        arr.push(e);
-    });
+    var arr = list instanceof Array ? list : Array.from(list);
     return arr[randomInteger(0, arr.length - 1)];
 }
 

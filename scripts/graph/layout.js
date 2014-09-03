@@ -84,7 +84,7 @@ Edge.prototype.destroy = function () {
 
 function computeForces() {
     'use strict';
-    var varr = Array.from(vertices),
+    var varr = Array.from(vertices.values()),
         i,
         j;
     for (i = 0; i < varr.length; i += 1) {
@@ -101,7 +101,7 @@ function postPositions() {
     postingPositions = true;
     setTimeout(function () {
         postingPositions = false;
-        self.postMessage({vertices: Array.from(vertices).map(function (v) {
+        self.postMessage({vertices: Array.from(vertices.values(), function (v) {
             return {id: v.id, x: v.x, y: v.y};
         })});
     }, 1);
@@ -162,12 +162,4 @@ self.onmessage = function (event) {
         this.vertices.clear();
         this.edges.clear();
     }
-};
-
-// for Firefox < 32
-Array.from = function (list) {
-    'use strict';
-    var arr = [];
-    list.forEach(function (e) { arr.push(e); });
-    return arr;
 };

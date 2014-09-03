@@ -31,7 +31,7 @@ Edge.prototype.toString = function () {
 function Trigger(id, graph) {
     'use strict';
     this.id = id;
-    this.vertices = new Set(randomSample([...graph.vertices.keys()], 5));
+    this.vertices = new Set(randomSample(Array.from(graph.vertices.keys()), 5));
     graph.onaddvertex.add(function (event) {
         if (this.vertices.size < 5) {
             this.addVertex(event.data.id);
@@ -41,7 +41,7 @@ function Trigger(id, graph) {
         if (this.vertices.delete(event.data.id)) {
             this.ondeletevertex.fire({id: event.data.id});
             while (this.vertices.size < Math.min(5, graph.vertices.size)) {
-                this.addVertex(randomChoice([...graph.vertices.keys()]));
+                this.addVertex(randomChoice(graph.vertices.keys()));
             }
         }
     }.bind(this));
@@ -220,7 +220,7 @@ Graph.prototype.nearest = function (id, n) {
             nearest.add(id);
         }, this);
     }, this);
-    return [...nearest];
+    return Array.from(nearest);
 };
 
 Graph.prototype.nearestTriggers = function (id, n) {
