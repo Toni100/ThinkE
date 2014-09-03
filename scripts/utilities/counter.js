@@ -4,5 +4,5 @@ function makeCounter(start) {
     return function () {
         i += 1;
         return i;
-    }
+    };
 }
