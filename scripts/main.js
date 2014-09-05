@@ -1,10 +1,10 @@
 /*jslint browser: true */
 /*global Graph, GraphView, Network, NetworkView, Queue, TextAction */
 
-var graph = new Graph(),
+var queue = new Queue(),
+    graph = new Graph(queue),
     network = new Network(),
     inputNeurons = new Map(),
-    queue = new Queue(),
     graphView = new GraphView(document.getElementById('graph'), graph),
     networkView = new NetworkView(document.getElementById('network'), network),
     context = new GraphView(document.getElementById('context')),
@@ -21,7 +21,7 @@ graph.onaddtrigger.add(function (event) {
 });
 graph.onvertexconnected.add(function (event) {
     'use strict';
-    queue.add(function () {
+    queue.prepend(function () {
         graph.nearestTriggers(event.data.id, 2).forEach(function (id) {
             inputNeurons.get(id).stimulate(1);
         });

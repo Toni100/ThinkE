@@ -57,12 +57,12 @@ Trigger.prototype.addVertex = function (id) {
     }
 };
 
-function Graph() {
+function Graph(queue) {
     'use strict';
     this.vertices = new Map();
     this.triggers = new Map();
     this.edges = new Map();
-    this.queue = new Queue();
+    this.queue = queue || new Queue();
     this.searches = new Map();
     this.makeID = makeCounter();
     this.minVertices = 10;
