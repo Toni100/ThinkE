@@ -13,7 +13,9 @@ var queue = new Queue(),
     inputNeurons = new Map(),
     graphView = new GraphView(document.getElementById('graph'), graph, queue, imageCache),
     networkView = new NetworkView(document.getElementById('network'), network),
-    context = new GraphView(document.getElementById('context'));
+    context = new GraphView(document.getElementById('context')),
+    story = new Story(),
+    storyView = new StoryView(document.getElementById('story'), story);
 
 while (network.neurons.size < 200) {
     network.addNeuron();
@@ -121,6 +123,11 @@ graph.ondeletevertex.add(setVertexCount);
         setTimeout(showContext, 1500);
     });
 }());
+
+// story
+graph.onvertexconnected.add(function (event) {
+    story.add(event.data.id, event.data.newness, graphView.vertices.get(event.data.id).visual);
+});
 
 
 // for (var i = 1; i <= 100; i += 1) {
