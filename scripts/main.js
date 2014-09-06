@@ -21,11 +21,11 @@ graph.onaddtrigger.add(function (event) {
 });
 graph.onvertexconnected.add(function (event) {
     'use strict';
-    queue.prepend(function () {
+    queue.prepend(function (finish) {
         graph.nearestTriggers(event.data.id, 2).forEach(function (id) {
             inputNeurons.get(id).stimulate(1);
         });
-        queue.next();
+        finish();
     });
 });
 

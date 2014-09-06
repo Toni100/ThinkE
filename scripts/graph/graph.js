@@ -118,10 +118,10 @@ Graph.prototype.add = function (value) {
     } else if (value instanceof Image) {
         this.addImage(value, id);
     } else {
-        this.queue.add(function () {
+        this.queue.add(function (finish) {
             this.vertices.set(id, new Vertex(id, value));
             this.onaddvertex.fire({id: id, feature: value, view: value});
-            this.queue.next();
+            finish();
         }.bind(this));
     }
     return id;
@@ -145,12 +145,12 @@ Graph.prototype.addEdgeByVertexIDs = function (id1, id2, eid) {
 Graph.prototype.addFile = function (file, id) {
     'use strict';
     var that = this;
-    this.queue.add(function () {
+    this.queue.add(function (finish) {
         var img = document.createElement('img');
         img.onload = function () {
             window.URL.revokeObjectURL(this.src);
             that.addImage(this, id, file);
-            that.queue.next();
+            finish();
         };
         img.src = window.URL.createObjectURL(file);
     });
@@ -158,10 +158,10 @@ Graph.prototype.addFile = function (file, id) {
 
 Graph.prototype.addImage = function (img, id, file) {
     'use strict';
-    this.queue.prepend(function () {
+    this.queue.prepend(function (finish) {
         this.vertices.set(id, new Vertex(id, file || img));
         this.onaddvertex.fire({id: id, feature: imageToArrayBuffer(img, 50, 50), view: img});
-        this.queue.next();
+        finish();
     }.bind(this));
 };
 

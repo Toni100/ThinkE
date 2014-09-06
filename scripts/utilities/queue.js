@@ -21,7 +21,7 @@ Queue.prototype.next = function () {
     }
     this.running = true;
     setTimeout(function () {
-        this.elements.shift()();
+        this.elements.shift()(this.next.bind(this));
     }.bind(this), 10);
 };
 
