@@ -35,3 +35,13 @@ function imageToArrayBuffer(img, w, h) {
     context.drawImage(img, 0, 0, w, h);
     return context.getImageData(0, 0, w, h).data.buffer;
 }
+
+function loadImage(file, callbach) {
+    'use strict';
+    var img = document.createElement('img');
+    img.onload = function () {
+        window.URL.revokeObjectURL(this.src);
+        callbach(this);
+    };
+    img.src = window.URL.createObjectURL(file);
+}

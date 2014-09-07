@@ -144,16 +144,12 @@ Graph.prototype.addEdgeByVertexIDs = function (id1, id2, eid) {
 
 Graph.prototype.addFile = function (file, id) {
     'use strict';
-    var that = this;
     this.queue.add(function (finish) {
-        var img = document.createElement('img');
-        img.onload = function () {
-            window.URL.revokeObjectURL(this.src);
-            that.addImage(this, id, file);
+        loadImage(file, function (img) {
+            this.addImage(img, id, file);
             finish();
-        };
-        img.src = window.URL.createObjectURL(file);
-    });
+        }.bind(this));
+    }.bind(this));
 };
 
 Graph.prototype.addImage = function (img, id, file) {
