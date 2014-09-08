@@ -105,8 +105,10 @@ graph.ondeletevertex.add(setVertexCount);
         if (!graph.vertices.has(last)) { return; }
         context.clear();
         graph.nearest(last, 1).forEach(function (id) {
-            var v = graphView.vertices.get(id);
-            context.addVertex(new VertexView(v.id, v.value, context));
+            var v = graphView.vertices.get(id),
+                vw = new VertexView(v.id, v.value, context);
+            [vw.w, vw.h] = [v.w, v.h];
+            context.addVertex(vw);
         });
         graphView.edges.forEach(function (e) {
             var v1 = context.vertices.get(e.vertex1.id),
