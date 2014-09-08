@@ -1,4 +1,14 @@
-/*jslint browser: true*/
+/*jslint browser: true */
+/*global File */
+
+function imageDimensionsBounded(img, size) {
+    'use strict';
+    var w = img.width,
+        h = img.height;
+    if (w <= size && h <= size) { return [w, h]; }
+    if (w > h) { return [size, size * h / w]; }
+    return [size * w / h, size];
+}
 
 function imageResize(img, size, callback) {
     'use strict';
@@ -36,12 +46,17 @@ function imageToArrayBuffer(img, w, h) {
     return context.getImageData(0, 0, w, h).data.buffer;
 }
 
-function loadImage(file, callbach) {
+function isImageFile(obj) {
+    'use strict';
+    return obj instanceof File && /image\/*/.test(obj.type);
+}
+
+function loadImage(file, callback) {
     'use strict';
     var img = document.createElement('img');
     img.onload = function () {
         window.URL.revokeObjectURL(this.src);
-        callbach(this);
+        callback(this);
     };
     img.src = window.URL.createObjectURL(file);
 }

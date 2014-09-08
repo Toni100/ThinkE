@@ -1,26 +1,44 @@
 /*jslint browser: true */
-/*global DisplayCache, randomSample, zoomify */
-/*global requestAnimationFrame, Worker */
+/*global randomSample, requestAnimationFrame, Worker, zoomify */
 
-function VertexView(id, graphView, display) {
+function VertexView(id, value, graphView) {
     'use strict';
     this.id = id;
-    this.displayCache = display instanceof DisplayCache ? display : new DisplayCache(display);
+    [this.w, this.h] = value instanceof Image ? imageDimensionsBounded(value, 10) : [10, 10];
+    if (value instanceof Image) {
+        this.value = new CacheList(function (size, finish) {
+            imageResize(value, size, finish);
+        });
+    } else if (isImageFile(value)) {
+        this.value = new CacheList(function (size, finish) {
+            graphView.imageCache.get(value).promise.then(function (img) {
+                [this.w, this.h] = imageDimensionsBounded(img, 10);
+                graphView.queue.prepend(function (done) {
+                    imageResize(img, size, finish);
+                    done();
+                })
+            }.bind(this));
+        }.bind(this), function (size) {
+            if (size === 100) { return this.value.get(10).result; }
+            if (size === 1000) { return this.value.get(100).result; }
+            return value.name;
+        }.bind(this));
+    } else {
+        this.value = value;
+    }
     this.x = 10 + Math.random() * (graphView.canvas.width - 20);
     this.y = 10 + Math.random() * (graphView.canvas.height - 20);
     Object.defineProperty(this, 'display', {
         get: function () {
-            return this.displayCache.get(graphView.canvas.zoom);
-        }
-    });
-    Object.defineProperty(this, 'h', {
-        get: function () {
-            return this.displayCache.height;
+            if (!(this.value instanceof CacheList)) { return this.value.toString(); }
+            if (graphView.canvas.zoom <= 1) { return this.value.get(10).result; }
+            if (graphView.canvas.zoom <= 10) { return this.value.get(100).result; }
+            return this.value.get(1000).result;
         }
     });
     Object.defineProperty(this, 'ht', {
         get: function () {
-            return this.displayCache.height * graphView.canvas.zoom;
+            return this.h * graphView.canvas.zoom;
         }
     });
     Object.defineProperty(this, 'visible', {
@@ -29,14 +47,9 @@ function VertexView(id, graphView, display) {
                 this.yt > -this.ht / 2 && this.yt < graphView.canvas.height + this.ht / 2;
         }
     });
-    Object.defineProperty(this, 'w', {
-        get: function () {
-            return this.displayCache.width;
-        }
-    });
     Object.defineProperty(this, 'wt', {
         get: function () {
-            return this.displayCache.width * graphView.canvas.zoom;
+            return this.w * graphView.canvas.zoom;
         }
     });
     Object.defineProperty(this, 'xt', {
@@ -128,8 +141,10 @@ TriggerView.prototype.draw = function (context, zoom, shiftx, shifty) {
     context.fillRect(x - 2, y - 2, 4, 4);
 };
 
-function GraphView(canvas, graph) {
+function GraphView(canvas, graph, queue, imageCache) {
     'use strict';
+    this.queue = queue || new Queue();
+    this.imageCache = imageCache || new CacheList(loadImage);
     this.vertices = new Map();
     this.reducedVertices = [];
     this.edges = new Map();
@@ -137,7 +152,7 @@ function GraphView(canvas, graph) {
     this.triggers = new Map();
     var g = null,
         handleOnaddvertex = function (event) {
-            this.addVertex(new VertexView(event.data.id, this, event.data.view));
+            this.addVertex(new VertexView(event.data.vertex.id, event.data.vertex.value, this));
         }.bind(this),
         handleOnaddedge = function (event) {
             this.addEdge(new EdgeView(event.data.id, this.vertices.get(event.data.vertex1id), this.vertices.get(event.data.vertex2id)));
@@ -171,7 +186,7 @@ function GraphView(canvas, graph) {
                 g.ondeletevertex.add(handleOndeletevertex);
                 g.onaddtrigger.add(handleOnaddtrigger);
                 g.vertices.forEach(function (v) {
-                    this.vertices.set(v.id, new VertexView(v.id, this));
+                    this.vertices.set(v.id, new VertexView(v.id, v.value, this));
                 }, this);
                 g.edges.forEach(function (e) {
                     this.edges.set(e.id, new EdgeView(e.id, this.vertices.get(e.vertex1.id), this.vertices.get(e.vertex2.id)));

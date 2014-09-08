@@ -2,10 +2,16 @@
 /*global Graph, GraphView, Network, NetworkView, Queue, TextAction */
 
 var queue = new Queue(),
-    graph = new Graph(queue),
+    imageCache = new CacheList(function (file, finish) {
+        queue.add(function (done) {
+            loadImage(file, finish);
+            done();
+        })
+    }),
+    graph = new Graph(queue, imageCache),
     network = new Network(),
     inputNeurons = new Map(),
-    graphView = new GraphView(document.getElementById('graph'), graph),
+    graphView = new GraphView(document.getElementById('graph'), graph, queue, imageCache),
     networkView = new NetworkView(document.getElementById('network'), network),
     context = new GraphView(document.getElementById('context')),
     i;
@@ -67,12 +73,11 @@ resizeGraph();
 makeVideoInput(graph.add.bind(graph));
 document.getElementById('fileInput').onchange = function () {
     'use strict';
-    var i;
-    for (i = 0; i < this.files.length; i += 1) {
-        if (this.files[i].type.match(/image\/*/)) {
-            graph.add(this.files[i]);
+    Array.from(this.files).forEach(function (f) {
+        if (isImageFile(f)) {
+            graph.add(f);
         }
-    }
+    })
 };
 document.getElementById('textInput').onkeypress = function (event) {
     'use strict';
@@ -101,7 +106,7 @@ graph.ondeletevertex.add(setVertexCount);
         context.clear();
         graph.nearest(last, 1).forEach(function (id) {
             var v = graphView.vertices.get(id);
-            context.addVertex(new VertexView(v.id, context, v.displayCache));
+            context.addVertex(new VertexView(v.id, v.value, context));
         });
         graphView.edges.forEach(function (e) {
             var v1 = context.vertices.get(e.vertex1.id),

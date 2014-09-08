@@ -57,12 +57,13 @@ Trigger.prototype.addVertex = function (id) {
     }
 };
 
-function Graph(queue) {
+function Graph(queue, imageCache) {
     'use strict';
+    this.queue = queue || new Queue();
+    this.imageCache = imageCache || new CacheList(loadImage);
     this.vertices = new Map();
     this.triggers = new Map();
     this.edges = new Map();
-    this.queue = queue || new Queue();
     this.searches = new Map();
     this.makeID = makeCounter();
     this.minVertices = 10;
@@ -113,14 +114,17 @@ function Graph(queue) {
 Graph.prototype.add = function (value) {
     'use strict';
     var id = this.makeID();
-    if (value instanceof File) {
-        this.addFile(value, id);
+    if (isImageFile(value)) {
+        this.imageCache.get(value).promise.then(function (img) {
+            this.addImage(img, id, value);
+        }.bind(this));
     } else if (value instanceof Image) {
         this.addImage(value, id);
     } else {
         this.queue.add(function (finish) {
-            this.vertices.set(id, new Vertex(id, value));
-            this.onaddvertex.fire({id: id, feature: value, view: value});
+            var v = new Vertex(id, value);
+            this.vertices.set(id, v);
+            this.onaddvertex.fire({vertex: v, id: id, feature: value, view: value});
             finish();
         }.bind(this));
     }
@@ -142,21 +146,12 @@ Graph.prototype.addEdgeByVertexIDs = function (id1, id2, eid) {
     }
 };
 
-Graph.prototype.addFile = function (file, id) {
-    'use strict';
-    this.queue.add(function (finish) {
-        loadImage(file, function (img) {
-            this.addImage(img, id, file);
-            finish();
-        }.bind(this));
-    }.bind(this));
-};
-
 Graph.prototype.addImage = function (img, id, file) {
     'use strict';
     this.queue.prepend(function (finish) {
-        this.vertices.set(id, new Vertex(id, file || img));
-        this.onaddvertex.fire({id: id, feature: imageToArrayBuffer(img, 50, 50), view: img});
+        var v = new Vertex(id, file || img);
+        this.vertices.set(id, v);
+        this.onaddvertex.fire({vertex: v, id: id, feature: imageToArrayBuffer(img, 50, 50), view: img});
         finish();
     }.bind(this));
 };
