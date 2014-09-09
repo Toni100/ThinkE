@@ -1,5 +1,6 @@
 /*jslint browser: true */
-/*global randomSample, requestAnimationFrame, Worker, zoomify */
+/*global HTMLCanvasElement, requestAnimationFrame, Worker */
+/*global CacheList, canvasResize, dimensionsBounded, isImageFile, loadImage, Queue, randomSample, zoomify */
 
 function VertexView(id, value, graphView) {
     'use strict';
@@ -7,16 +8,16 @@ function VertexView(id, value, graphView) {
     [this.w, this.h] = (value.width && value.height) ? dimensionsBounded(value, 10) : [10, 10];
     if (value instanceof Image) {
         this.value = new CacheList(function (size, finish) {
-            imageResize(value, size, finish);
+            canvasResize(value, size, finish);
         });
     } else if (isImageFile(value)) {
         this.value = new CacheList(function (size, finish) {
             graphView.imageCache.get(value).promise.then(function (img) {
                 [this.w, this.h] = dimensionsBounded(img, 10);
                 graphView.queue.prepend(function (done) {
-                    imageResize(img, size, finish);
+                    canvasResize(img, size, finish);
                     done();
-                })
+                });
             }.bind(this));
         }.bind(this), function (size) {
             if (size === 100) { return this.value.get(10).result; }
@@ -67,7 +68,7 @@ function VertexView(id, value, graphView) {
 VertexView.prototype.draw = function (context) {
     'use strict';
     if (!this.visible) { return; }
-    if (this.display instanceof Image) {
+    if (this.display instanceof HTMLCanvasElement || this.display instanceof Image) {
         context.drawImage(this.display, this.xt - this.wt / 2, this.yt - this.ht / 2, this.wt, this.ht);
     } else if (typeof this.display === 'string') {
         context.fillStyle = 'black';
