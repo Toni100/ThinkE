@@ -1,7 +1,7 @@
 /*jslint browser: true */
 /*global File */
 
-function imageDimensionsBounded(img, size) {
+function dimensionsBounded(img, size) {
     'use strict';
     var w = img.width,
         h = img.height;
@@ -10,30 +10,21 @@ function imageDimensionsBounded(img, size) {
     return [size * w / h, size];
 }
 
+function canvasResize(img, size, callback) {
+    'use strict';
+    var canvas = document.createElement('canvas');
+    [canvas.width, canvas.height] = dimensionsBounded(img, size);
+    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+    callback(canvas);
+}
+
 function imageResize(img, size, callback) {
     'use strict';
-    var canvas,
-        resizedImg,
-        w = img.width,
-        h = img.height;
-    if (w <= size && h <= size) {
-        callback(img);
-        return;
-    }
-    if (w > h) {
-        [w, h] = [size, size * h / w];
-    } else {
-        [w, h] = [size * w / h, size];
-    }
-    canvas = document.createElement('canvas');
-    canvas.width = w;
-    canvas.height = h;
-    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-    resizedImg = document.createElement('img');
-    resizedImg.onload = function () {
-        callback(this);
-    };
-    resizedImg.src = canvas.toDataURL();
+    canvasResize(img, size, function (canvas) {
+        var resizedImg = document.createElement('img');
+        resizedImg.onload = function () { callback(this); };
+        resizedImg.src = canvas.toDataURL();
+    });
 }
 
 function imageToArrayBuffer(img, w, h) {

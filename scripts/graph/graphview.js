@@ -4,7 +4,7 @@
 function VertexView(id, value, graphView) {
     'use strict';
     this.id = id;
-    [this.w, this.h] = value instanceof Image ? imageDimensionsBounded(value, 10) : [10, 10];
+    [this.w, this.h] = (value.width && value.height) ? dimensionsBounded(value, 10) : [10, 10];
     if (value instanceof Image) {
         this.value = new CacheList(function (size, finish) {
             imageResize(value, size, finish);
@@ -12,7 +12,7 @@ function VertexView(id, value, graphView) {
     } else if (isImageFile(value)) {
         this.value = new CacheList(function (size, finish) {
             graphView.imageCache.get(value).promise.then(function (img) {
-                [this.w, this.h] = imageDimensionsBounded(img, 10);
+                [this.w, this.h] = dimensionsBounded(img, 10);
                 graphView.queue.prepend(function (done) {
                     imageResize(img, size, finish);
                     done();
