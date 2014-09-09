@@ -210,7 +210,7 @@ function GraphView(canvas, graph, queue, imageCache) {
     }.bind(this);
     this.canvas = zoomify(canvas, function () {
         this.draw();
-        this.updateReducedView();
+        this.updateReducedView(60);
     }.bind(this));
     this.canvas.onmousemove = function (event) {
         this.layout.postMessage({setpointer: {
