@@ -68,11 +68,12 @@ function VertexView(id, value, graphView) {
 VertexView.prototype.draw = function (context) {
     'use strict';
     if (!this.visible) { return; }
-    if (this.display instanceof HTMLCanvasElement || this.display instanceof Image) {
-        context.drawImage(this.display, this.xt - this.wt / 2, this.yt - this.ht / 2, this.wt, this.ht);
-    } else if (typeof this.display === 'string') {
+    var d = this.display;
+    if (d instanceof HTMLCanvasElement || d instanceof Image) {
+        context.drawImage(d, this.xt - this.wt / 2, this.yt - this.ht / 2, this.wt, this.ht);
+    } else if (typeof d === 'string') {
         context.fillStyle = 'black';
-        context.fillText(this.display, this.xt, this.yt);
+        context.fillText(d, this.xt, this.yt);
     } else {
         context.fillStyle = 'gray';
         context.fillRect(this.xt - 2, this.yt - 2, 4, 4);
