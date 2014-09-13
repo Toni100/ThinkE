@@ -25,7 +25,7 @@ function postChanges() {
             })
         });
         vertexDiff.added.forEach(function (v) {
-            self.postMessage({vertexConnected: {id: v.id, newness: v.edges.length ? -v.edges[0].score : 0}});
+            self.postMessage({vertexConnected: {id: v.id, newness: v.edges.length ? 1 - v.edges[0].score : 1}});
         });
         vertexDiff.clear();
         edgeDiff.clear();
