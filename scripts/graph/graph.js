@@ -118,7 +118,7 @@ Graph.prototype.add = function (value) {
         this.imageCache.get(value).promise.then(function (img) {
             this.addImage(img, id, value);
         }.bind(this));
-    } else if (value instanceof Image) {
+    } else if (value instanceof HTMLCanvasElement || value instanceof Image) {
         this.addImage(value, id);
     } else {
         this.queue.add(function (finish) {
