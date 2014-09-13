@@ -5,9 +5,15 @@ function EventView(id, newness, visual) {
   this.visual = visual;
 }
 
-EventView.prototype.draw = function (context) {
+EventView.prototype.draw = function (context, position, zoom, shiftY) {
   'use strict';
-  this.visual.draw(context, -100000 * this.newness, 10 * this.id, 10);
+  var size = Math.max(10, 10 * zoom);
+  this.visual.draw(
+    context,
+    2 + size / 2 + 100 * (1 - this.newness) / zoom,
+    12 * position * zoom + shiftY,
+    size
+  );
 };
 
 function StoryView(canvas, story) {
@@ -24,7 +30,10 @@ function StoryView(canvas, story) {
 
 StoryView.prototype.draw = function () {
   'use strict';
-  var context = this.canvas.getContext('2d');
+  var context = this.canvas.getContext('2d'),
+    l = this.eventViews.length;
   context.clearRect(0, 0, this.canvas.width, this.canvas.height);
-  this.eventViews.forEach(function (e) { e.draw(context); });
+  this.eventViews.forEach(function (e, i) {
+    e.draw(context, l - i, this.canvas.zoom, this.canvas.shiftY);
+  }, this);
 };
