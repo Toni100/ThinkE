@@ -6,8 +6,8 @@ function VertexView(id, visual, graphView) {
     'use strict';
     this.id = id;
     this.visual = visual;
-    this.x = 10 + Math.random() * (graphView.canvas.width - 20);
-    this.y = 10 + Math.random() * (graphView.canvas.height - 20);
+    this.x = graphView.canvas.width / 2 - 10 + 20 * Math.random();
+    this.y = graphView.canvas.height / 2 - 10 + 20 * Math.random();
     Object.defineProperty(this, 'visible', {
         get: function () {
             return this.xt > -this.zoom * 5 && this.xt < graphView.canvas.width + this.zoom * 5 &&
