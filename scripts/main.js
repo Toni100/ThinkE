@@ -13,10 +13,9 @@ var queue = new Queue(),
     inputNeurons = new Map(),
     graphView = new GraphView(document.getElementById('graph'), graph, queue, imageCache),
     networkView = new NetworkView(document.getElementById('network'), network),
-    context = new GraphView(document.getElementById('context')),
-    i;
+    context = new GraphView(document.getElementById('context'));
 
-for (i = 0; i < 200; i += 1) {
+while (network.neurons.size < 200) {
     network.addNeuron();
 }
 
@@ -126,7 +125,7 @@ graph.ondeletevertex.add(setVertexCount);
 }());
 
 
-// for (i = 1; i <= 100; i += 1) {
+// for (var i = 1; i <= 100; i += 1) {
 //     graph.add(Math.round(Math.random() * 1000000));
 // }
 
