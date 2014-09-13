@@ -49,13 +49,9 @@ function NeuronView(neuron, networkView) {
         }
     });
     neuron.onstimulate.add(function (event) {
-        this.stimulated = true;
+        this.wasStimulated = true;
         this.lastStimulationStrength = event.data.strength;
-        networkView.draw();
-        setTimeout(function () {
-            this.stimulated = false;
-            networkView.drawDelayed();
-        }.bind(this), 200);
+        networkView.drawDelayed(1000);
     }.bind(this));
 }
 
@@ -92,8 +88,7 @@ function NetworkView(canvas, network) {
             var n = this.neurons.get(event.data.id);
             n.hasFired = true;
             n.lastFireStrength = event.data.strength;
-            this.draw();
-            this.drawDelayed(200);
+            this.drawDelayed(1000);
         }.bind(this);
     Object.defineProperty(this, 'network', {
         get: function () {
@@ -157,7 +152,7 @@ NetworkView.prototype.draw = function () {
             context.fillRect(n.xt - 2, n.yt - 2, 4, 4);
         });
         this.reducedNeurons.forEach(function (n) {
-            if (n.stimulated) {
+            if (n.wasStimulated) {
                 context.beginPath();
                 if (n.lastStimulationStrength > 0) {
                     context.fillStyle = 'rgba(100, 250, 180, 0.7)';
@@ -170,8 +165,10 @@ NetworkView.prototype.draw = function () {
                 context.strokeStyle = 'rgb(0, 150, 180)';
                 context.arc(n.xt, n.yt, 4, 0, 2 * Math.PI, false);
                 context.stroke();
+                n.wasStimulated = false;
+                this.drawDelayed();
             }
-        });
+        }, this);
         context.fillStyle = 'rgba(50, 200, 255, 0.5)';
         context.strokeStyle = 'rgba(50, 200, 255, 0.5)';
         context.beginPath();
@@ -184,7 +181,8 @@ NetworkView.prototype.draw = function () {
                 });
                 n.hasFired = false;
             }
-        });
+            this.drawDelayed();
+        }, this);
         context.stroke();
     }.bind(this));
 };
@@ -209,7 +207,7 @@ NetworkView.prototype.updateReducedView = function (delay) {
         this.neurons.forEach(function (n) {
             if (n.visible) { this.reducedNeurons.push(n); }
         }, this);
-        this.reducedNeurons = randomSample(this.reducedNeurons, 300);
+        this.reducedNeurons = randomSample(this.reducedNeurons, 200);
         this.drawDelayed();
     }.bind(this), typeof delay === 'number' ? delay : 1800);
 };
