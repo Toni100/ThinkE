@@ -1,12 +1,12 @@
 /*jslint browser: true */
-/*global Graph, GraphView, Network, NetworkView, Queue, TextAction */
+/*global CacheList, Graph, GraphView, isImageFile, loadImage, Network, NetworkView, Queue, TextAction */
 
 var queue = new Queue(),
     imageCache = new CacheList(function (file, finish) {
         queue.add(function (done) {
             loadImage(file, finish);
             done();
-        })
+        });
     }),
     graph = new Graph(queue, imageCache),
     network = new Network(),
@@ -77,7 +77,7 @@ document.getElementById('fileInput').onchange = function () {
         if (isImageFile(f)) {
             graph.add(f);
         }
-    })
+    });
 };
 document.getElementById('textInput').onkeypress = function (event) {
     'use strict';
@@ -105,10 +105,8 @@ graph.ondeletevertex.add(setVertexCount);
         if (!graph.vertices.has(last)) { return; }
         context.clear();
         graph.nearest(last, 1).forEach(function (id) {
-            var v = graphView.vertices.get(id),
-                vw = new VertexView(v.id, v.value, context);
-            [vw.w, vw.h] = [v.w, v.h];
-            context.addVertex(vw);
+            var v = graphView.vertices.get(id);
+            context.addVertex(new VertexView(v.id, v.visual, context));
         });
         graphView.edges.forEach(function (e) {
             var v1 = context.vertices.get(e.vertex1.id),

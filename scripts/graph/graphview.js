@@ -1,83 +1,34 @@
 /*jslint browser: true */
-/*global HTMLCanvasElement, requestAnimationFrame, Worker */
-/*global CacheList, canvasResize, dimensionsBounded, isImageFile, loadImage, Queue, randomSample, zoomify */
+/*global requestAnimationFrame, Worker */
+/*global CacheList, isImageFile, loadImage, Queue, randomSample, Visual, zoomify */
 
-function VertexView(id, value, graphView) {
+function VertexView(id, visual, graphView) {
     'use strict';
     this.id = id;
-    [this.w, this.h] = (value.width && value.height) ? dimensionsBounded(value, 10) : [10, 10];
-    if (value instanceof Image) {
-        this.value = new CacheList(function (size, finish) {
-            canvasResize(value, size, finish);
-        });
-    } else if (isImageFile(value)) {
-        this.value = new CacheList(function (size, finish) {
-            graphView.imageCache.get(value).promise.then(function (img) {
-                [this.w, this.h] = dimensionsBounded(img, 10);
-                graphView.queue.prepend(function (done) {
-                    canvasResize(img, size, finish);
-                    done();
-                });
-            }.bind(this));
-        }.bind(this), function (size) {
-            if (size === 100) { return this.value.get(10).result; }
-            if (size === 1000) { return this.value.get(100).result; }
-            return value.name;
-        }.bind(this));
-    } else {
-        this.value = value;
-    }
+    this.visual = visual;
     this.x = 10 + Math.random() * (graphView.canvas.width - 20);
     this.y = 10 + Math.random() * (graphView.canvas.height - 20);
-    Object.defineProperty(this, 'display', {
-        get: function () {
-            if (!(this.value instanceof CacheList)) { return this.value.toString(); }
-            if (graphView.canvas.zoom <= 1) { return this.value.get(10).result; }
-            if (graphView.canvas.zoom <= 10) { return this.value.get(100).result; }
-            return this.value.get(1000).result;
-        }
-    });
-    Object.defineProperty(this, 'ht', {
-        get: function () {
-            return this.h * graphView.canvas.zoom;
-        }
-    });
     Object.defineProperty(this, 'visible', {
         get: function () {
-            return this.xt > -this.wt / 2 && this.xt < graphView.canvas.width + this.wt / 2 &&
-                this.yt > -this.ht / 2 && this.yt < graphView.canvas.height + this.ht / 2;
-        }
-    });
-    Object.defineProperty(this, 'wt', {
-        get: function () {
-            return this.w * graphView.canvas.zoom;
+            return this.xt > -this.zoom * 5 && this.xt < graphView.canvas.width + this.zoom * 5 &&
+                this.yt > -this.zoom * 5 && this.yt < graphView.canvas.height + this.zoom * 5;
         }
     });
     Object.defineProperty(this, 'xt', {
-        get: function () {
-            return this.x * graphView.canvas.zoom + graphView.canvas.shiftX;
-        }
+        get: function () { return this.x * this.zoom + graphView.canvas.shiftX; }
     });
     Object.defineProperty(this, 'yt', {
-        get: function () {
-            return this.y * graphView.canvas.zoom + graphView.canvas.shiftY;
-        }
+        get: function () { return this.y * this.zoom + graphView.canvas.shiftY; }
+    });
+    Object.defineProperty(this, 'zoom', {
+        get: function () { return graphView.canvas.zoom; }
     });
 }
 
 VertexView.prototype.draw = function (context) {
     'use strict';
     if (!this.visible) { return; }
-    var d = this.display;
-    if (d instanceof HTMLCanvasElement || d instanceof Image) {
-        context.drawImage(d, this.xt - this.wt / 2, this.yt - this.ht / 2, this.wt, this.ht);
-    } else if (typeof d === 'string') {
-        context.fillStyle = 'black';
-        context.fillText(d, this.xt, this.yt);
-    } else {
-        context.fillStyle = 'gray';
-        context.fillRect(this.xt - 2, this.yt - 2, 4, 4);
-    }
+    this.visual.draw(context, this.xt, this.yt, 10 * this.zoom);
 };
 
 function EdgeView(id, vertex1, vertex2) {
@@ -154,7 +105,13 @@ function GraphView(canvas, graph, queue, imageCache) {
     this.triggers = new Map();
     var g = null,
         handleOnaddvertex = function (event) {
-            this.addVertex(new VertexView(event.data.vertex.id, event.data.vertex.value, this));
+            this.addVertex(
+                new VertexView(
+                    event.data.vertex.id,
+                    new Visual(isImageFile(event.data.vertex.value) ? this.imageCache.get(event.data.vertex.value) : event.data.vertex.value, this.queue),
+                    this
+                )
+            );
         }.bind(this),
         handleOnaddedge = function (event) {
             this.addEdge(new EdgeView(event.data.id, this.vertices.get(event.data.vertex1id), this.vertices.get(event.data.vertex2id)));
@@ -188,7 +145,7 @@ function GraphView(canvas, graph, queue, imageCache) {
                 g.ondeletevertex.add(handleOndeletevertex);
                 g.onaddtrigger.add(handleOnaddtrigger);
                 g.vertices.forEach(function (v) {
-                    this.vertices.set(v.id, new VertexView(v.id, v.value, this));
+                    this.vertices.set(v.id, new VertexView(v.id, new Visual(isImageFile(v.value) ? imageCache.get(v.value) : v.value), this));
                 }, this);
                 g.edges.forEach(function (e) {
                     this.edges.set(e.id, new EdgeView(e.id, this.vertices.get(e.vertex1.id), this.vertices.get(e.vertex2.id)));
