@@ -105,14 +105,12 @@ graph.ondeletevertex.add(setVertexCount);
         context.clear();
         graph.nearest(last, 1).forEach(function (id) {
             var v = graphView.vertices.get(id);
-            context.addVertex(new VertexView(v.id, v.visual, context));
+            if (v) { context.addVertex(new VertexView(v.id, v.visual, context)); }
         });
         graphView.edges.forEach(function (e) {
             var v1 = context.vertices.get(e.vertex1.id),
                 v2 = context.vertices.get(e.vertex2.id);
-            if (v1 && v2) {
-                context.addEdge(new EdgeView(e.id, v1, v2));
-            }
+            if (v1 && v2) { context.addEdge(new EdgeView(e.id, v1, v2)); }
         });
         context.layout.postMessage({fixvertex: {id: last, x: context.canvas.width / 2, y: context.canvas.height / 2}});
     }
