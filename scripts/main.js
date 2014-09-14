@@ -126,7 +126,9 @@ graph.ondeletevertex.add(setVertexCount);
 
 // story
 graph.onvertexconnected.add(function (event) {
-    story.add(event.data.id, event.data.newness, graphView.vertices.get(event.data.id).visual);
+    'use strict';
+    var vw = graphView.vertices.get(event.data.id);
+    story.add(event.data.id, event.data.newness, vw ? vw.visual : new Visual(event.data.id));
 });
 
 
