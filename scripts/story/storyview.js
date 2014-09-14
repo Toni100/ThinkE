@@ -30,10 +30,18 @@ function StoryView(canvas, story) {
 
 StoryView.prototype.draw = function () {
   'use strict';
-  var context = this.canvas.getContext('2d'),
-    l = this.eventViews.length;
-  context.clearRect(0, 0, this.canvas.width, this.canvas.height);
-  this.eventViews.forEach(function (e, i) {
-    e.draw(context, l - i, this.canvas.zoom, this.canvas.shiftY);
-  }, this);
+  if (this.drawing) { return; }
+  this.drawing = true;
+  requestAnimationFrame(function () {
+    this.drawing = false;
+    var context = this.canvas.getContext('2d'),
+      l = this.eventViews.length,
+      min = Math.max(0, Math.floor(l - (this.canvas.height - this.canvas.shiftY) / (12 * this.canvas.zoom))),
+      max = Math.min(l - 1, Math.ceil(this.canvas.shiftY / (12 * this.canvas.zoom) + l)),
+      i;
+    context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    for (i = min; i <= max; i += 1) {
+      this.eventViews[i].draw(context, l - i, this.canvas.zoom, this.canvas.shiftY);
+    }
+  }.bind(this));
 };
